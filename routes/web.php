@@ -46,12 +46,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::patch('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
 });
 
 
 /*
 |--------------------------------------------------------------------------
-| Admin Routes (Explicitly defined per request)
+| Admin Routes
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {

@@ -40,15 +40,22 @@
                     </div>
                     <span class="text-xs font-black uppercase tracking-widest text-base-content">Browse Catalog</span>
                 </a>
-                
-                <x-auth.confirm-role>
+
+                @if (!auth()->user()->isAdmin())
                     <a href="{{ route('orders.index') }}" class="p-8 text-center hover:bg-base-200 transition-colors group border-x border-base-200">
                         <div class="text-indigo-600 mb-2 group-hover:scale-110 transition-transform">
                             <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                         </div>
                         <span class="text-xs font-black uppercase tracking-widest text-base-content">My Orders</span>
                     </a>
-                </x-auth.confirm-role>
+                @else
+                    <a href="{{ route('admin.orders.index') }}" class="p-8 text-center hover:bg-base-200 transition-colors group border-x border-base-200">
+                        <div class="text-indigo-600 mb-2 group-hover:scale-110 transition-transform">
+                            <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest text-base-content">Manage Orders</span>
+                    </a>
+                @endif
 
                 <a href="{{ route('profile.edit') }}" class="p-8 text-center hover:bg-base-200 transition-colors group">
                     <div class="text-indigo-600 mb-2 group-hover:scale-110 transition-transform">

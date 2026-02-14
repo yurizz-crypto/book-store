@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\Review;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
@@ -16,9 +16,18 @@ class ReviewController extends Controller
             'comment' => 'nullable|string|max:1000',
         ]);
 
+        $hasCompletedOrder = $request->user()->orders()
+            ->where('status', 'completed')
+            ->whereHas('orderItems', fn($q) => $q->where('book_id', $book->id))
+            ->exists();
+
+        if (!$hasCompletedOrder && $request->user()->role !== 'admin') {
+            return back()->with('error', 'You must have a completed order for this book to leave a review.');
+        }
+
         Review::updateOrCreate(
             [
-                'user_id' => $request->auth()->id(),
+                'user_id' => Auth::id(),
                 'book_id' => $book->id,
             ],
             [
@@ -31,11 +40,9 @@ class ReviewController extends Controller
             ->with('success', 'Review processed successfully!');
     }
 
-    public function destroy(Request $request, Review $review)
+    public function destroy(Review $review)
     {
-        $authenticatedUser = $request->auth();
-
-        if ($authenticatedUser->id() !== $review->user_id && $authenticatedUser->user()->role !== 'admin') {
+        if (Auth::id() !== $review->user_id && Auth::user()->role !== 'admin') {
             abort(403, 'Unauthorized action.');
         }
 

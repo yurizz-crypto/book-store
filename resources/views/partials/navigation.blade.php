@@ -1,7 +1,7 @@
 <nav class="bg-indigo-600 text-white shadow-xl sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-20">
-            {{-- Left Side: Brand & Main Nav --}}
+            {{-- Left Side --}}
             <div class="flex items-center">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 group">
                     <span class="text-2xl font-black tracking-tighter uppercase">PageTurner</span>
@@ -22,7 +22,6 @@
                 @endguest
 
                 @auth
-                    {{-- Admin Quick Actions --}}
                     @if(auth()->user()->role === 'admin')
                         <div class="hidden lg:flex items-center bg-indigo-700 rounded-2xl px-2 py-1 mr-2 border border-indigo-400/30">
                             <a href="{{ route('admin.books.create') }}" class="p-2 hover:text-indigo-200" title="Add Book">
@@ -31,16 +30,38 @@
                         </div>
                     @endif
 
-                    {{-- Cart Button --}}
-                    <x-auth.confirm-role>
-                        <a href="{{ route('orders.index') }}" class="relative p-3 hover:bg-indigo-500 rounded-xl transition group">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                            <span class="absolute top-2 right-2 flex h-4 w-4">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-300 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-4 w-4 bg-white text-[10px] font-bold text-indigo-600 items-center justify-center">0</span>
-                            </span>
+                    @auth
+                        @php
+                            if(auth()->user()->role === 'admin') {
+                                $orderCount = \App\Models\Order::where('status', 'pending')->count();
+                            } else {
+                                $orderCount = auth()->user()->orders()->where('status', 'pending')->count();
+                            }
+                        @endphp
+
+                        <a href="{{ route(auth()->user()->role === 'admin' ? 'admin.orders.index' : 'orders.index') }}" 
+                        class="relative p-2 hover:bg-indigo-500 rounded-2xl transition group flex items-center justify-center">
+                            
+                            @if(auth()->user()->role === 'admin')
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            @else
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                            @endif
+
+                            @if($orderCount > 0)
+                                <span class="absolute -top-1 -right-1 flex h-5 w-5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-300 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-5 w-5 bg-white text-[10px] font-black text-indigo-600 items-center justify-center shadow-sm">
+                                        {{ $orderCount > 9 ? '9+' : $orderCount }}
+                                    </span>
+                                </span>
+                            @endif
                         </a>
-                    </x-auth.confirm-role>
+                    @endauth
 
                     {{-- User Dropdown Area --}}
                     <div class="flex items-center gap-3 pl-4 border-l border-indigo-400/50">
@@ -49,7 +70,6 @@
                             <span class="text-[10px] text-indigo-200 font-bold uppercase tracking-tighter">{{ auth()->user()->role }}</span>
                         </div>
                         
-                        {{-- Professional Avatar Circle --}}
                         <a href="{{ route('profile.edit') }}" class="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 font-black shadow-inner">
                             {{ substr(auth()->user()->name, 0, 1) }}
                         </a>

@@ -1,4 +1,4 @@
-<x-guest-layout>
+<x-guest-layout title="Register | PageTurner">
     {{-- Header Section --}}
     <div class="text-center mb-10">
         <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">

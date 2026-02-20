@@ -57,8 +57,8 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order)
     {
-        if ($order->status === 'completed') {
-            return back()->with('error', 'Completed orders are locked and cannot be modified.');
+        if (Auth::user()->role !== 'admin' && $order->status === 'completed') {
+            return back()->with('error', 'Completed orders are locked.');
         }
 
         if (Auth::user()->role === 'admin') {
@@ -67,7 +67,7 @@ class OrderController extends Controller
             $order->update(['status' => 'cancelled']);
         }
 
-        return back()->with('success', 'Order status updated successfully.');
+        return back()->with('success', 'Order updated!');
     }
 
     public function adminIndex(Request $request)

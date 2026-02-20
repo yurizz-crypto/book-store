@@ -38,14 +38,14 @@
                 <div class="flex items-center gap-6">
                     {{-- User Avatar Initials --}}
                     <div class="h-14 w-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xl">
-                        {{ substr($order->user->name, 0, 1) }}
+                        {{ substr($order->user->first_name, 0, 1) }}
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
                             <h3 class="font-black text-gray-900">Order #{{ $order->id }}</h3>
                             <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded font-bold uppercase text-gray-500">{{ $order->status }}</span>
                         </div>
-                        <p class="text-sm font-bold text-gray-500">Customer: <span class="text-gray-900">{{ $order->user->name }}</span></p>
+                        <p class="text-sm font-bold text-gray-500">Customer: <span class="text-gray-900">{{ $order->user->email }}</span></p>
                         <p class="text-xs text-gray-400 font-medium">{{ $order->created_at->format('M d, Y • h:i A') }}</p>
                     </div>
                 </div>
@@ -61,10 +61,11 @@
                                 <span class="text-[10px] font-black uppercase tracking-widest">Finalized</span>
                             </div>
                         @else
-                            @if (!$order->status === 'cancelled')
+                            @if ($order->status !== 'cancelled')
                                 <div class="flex items-center gap-2">
                                     <form action="{{ route('orders.update', $order) }}" method="POST" class="flex items-center gap-2">
-                                        @csrf @method('PATCH')
+                                        @csrf 
+                                        @method('PATCH')
                                         <select name="status" onchange="this.form.submit()" class="text-[10px] font-black uppercase tracking-widest rounded-xl border-gray-200 focus:ring-indigo-500 py-2 pl-3 pr-8">
                                             <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Pending</option>
                                             <option value="processing" {{ $order->status == 'processing' ? 'selected' : '' }}>Processing</option>
@@ -73,7 +74,8 @@
                                     </form>
 
                                     <form action="{{ route('orders.update', $order) }}" method="POST">
-                                        @csrf @method('PATCH')
+                                        @csrf 
+                                        @method('PATCH')
                                         <input type="hidden" name="status" value="cancelled">
                                         <button type="submit" onclick="return confirm('Are you sure you want to decline this order?')" class="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all duration-300" title="Decline Order">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>

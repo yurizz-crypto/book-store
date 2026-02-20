@@ -12,7 +12,6 @@ class BookController extends Controller
     {
         $query = Book::query();
 
-        // 1. Search Logic
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
                 $q->where('title', 'like', '%' . $request->search . '%')
@@ -20,12 +19,10 @@ class BookController extends Controller
             });
         }
 
-        // 2. Category Filter
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
         }
 
-        // 3. Sorting Logic
         switch ($request->sort) {
             case 'price_asc':
                 $query->orderBy('price', 'asc');
@@ -38,7 +35,6 @@ class BookController extends Controller
                 break;
         }
 
-        // 4. Paginate and Append Query String
         $books = $query->paginate(12)->withQueryString();
         
         $categories = Category::all();

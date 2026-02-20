@@ -70,14 +70,10 @@ class OrderController extends Controller
         return back()->with('success', 'Order status updated successfully.');
     }
 
-    // OrderController.php
-
     public function adminIndex(Request $request)
     {
-        // Capture the status from the tabs, default to pending
         $status = $request->query('status', 'pending');
 
-        // Admins see all orders regardless of user_id
         $orders = Order::where('status', $status)
             ->with(['user', 'orderItems.book'])
             ->latest()

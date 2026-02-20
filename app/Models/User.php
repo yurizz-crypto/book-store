@@ -18,7 +18,9 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'middle_name',
+        'last_name',
         'email',
         'role',
         'password',
@@ -42,8 +44,12 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'first_name',
+            'middle_name',
+            'last_name',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role',
         ];
     }
 
@@ -60,5 +66,10 @@ class User extends Authenticatable
     public function isAdmin()
     {
         return $this->role === 'admin';
+    }
+
+    public function getFullName()
+    {
+        return "{$this->first_name} {$this->middle_name} {$this->last_name}";
     }
 }

@@ -18,13 +18,13 @@
                 {{-- Avatar Initial --}}
                 <div class="avatar placeholder">
                     <div class="flex items-center justify-center bg-indigo-600 text-white rounded-2xl w-24 h-24 shadow-lg shadow-indigo-200">
-                        <span class="text-4xl font-black">{{ substr(Auth::user()->name, 0, 1) }}</span>
+                        <span class="text-4xl font-black">{{ substr(Auth::user()->first_name, 0, 1) }}</span>
                     </div>
                 </div>
 
                 <div class="text-center md:text-left">
                     <h1 class="text-3xl font-black text-base-content tracking-tight">
-                        Welcome back, {{ Auth::user()->name }}!
+                        Welcome back, {{ Auth::user()->getFullName() }}!
                     </h1>
                     <p class="text-base-content/60 mt-2 font-medium">
                         Manage your PageTurner orders, reviews, and profile settings here.

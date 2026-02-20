@@ -3,7 +3,7 @@
         <div class="flex justify-between h-20">
             {{-- Left Side --}}
             <div class="flex items-center">
-                <a href="{{ route('home') }}" class="flex items-center gap-2 group">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2 group">
                     <span class="text-2xl font-black tracking-tighter uppercase">PageTurner</span>
                 </a>
 
@@ -66,12 +66,12 @@
                     {{-- User Dropdown Area --}}
                     <div class="flex items-center gap-3 pl-4 border-l border-indigo-400/50">
                         <div class="hidden flex-col items-end md:flex">
-                            <span class="text-xs font-black uppercase tracking-widest">{{ auth()->user()->name }}</span>
+                            <span class="text-xs font-black uppercase tracking-widest">{{ auth()->user()->first_name }}</span>
                             <span class="text-[10px] text-indigo-200 font-bold uppercase tracking-tighter">{{ auth()->user()->role }}</span>
                         </div>
                         
                         <a href="{{ route('profile.edit') }}" class="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 font-black shadow-inner">
-                            {{ substr(auth()->user()->name, 0, 1) }}
+                            {{ substr(auth()->user()->first_name, 0, 1) }}
                         </a>
 
                         <form method="POST" action="{{ route('logout') }}" class="inline">

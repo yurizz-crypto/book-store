@@ -16,11 +16,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::factory()->create([
-            'name' => 'Admin User',
+            'first_name' => 'Admin',
+            'middle_name' => null, // or 'Q'
+            'last_name' => 'User',
             'email' => 'admin@pageturner.com',
             'role' => 'admin',
         ]);
-
+        
         $customers = User::factory(10)->create(['role' => 'customer']);
 
         $categories = Category::factory(8)->create();

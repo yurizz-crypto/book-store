@@ -9,22 +9,40 @@
     <form method="POST" action="{{ route('register') }}" class="space-y-6">
         @csrf
 
-        {{-- Name --}}
-        <div>
-            <label for="name" class="block text-xs font-black text-gray-500 uppercase tracking-[0.15em] mb-2 px-1">
-                Username
-            </label>
-            <div class="relative">
-                <input id="name" 
-                       type="text" 
-                       name="name" 
-                       value="{{ old('name') }}" 
-                       required 
-                       autofocus 
-                       class="block w-full px-4 py-4 rounded-2xl border-gray-200 text-gray-900 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-400 border" 
-                       placeholder="Enter your name">
+        {{-- Name Section --}}
+        <div class="grid grid-cols-1 gap-6"> {{-- Changed to grid-cols-1 --}}
+            {{-- First Name --}}
+            <div>
+                <label for="first_name" class="block text-xs font-black text-gray-500 uppercase tracking-[0.15em] mb-2 px-1">
+                    First Name
+                </label>
+                <input id="first_name" type="text" name="first_name" value="{{ old('first_name', $user->first_name ?? '') }}" required autofocus 
+                    class="block w-full px-4 py-4 rounded-2xl border-gray-200 text-gray-900 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-400 border" 
+                    placeholder="First Name">
+                <x-input-error :messages="$errors->get('first_name')" class="mt-2" />
             </div>
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+
+            {{-- Middle Name --}}
+            <div>
+                <label for="middle_name" class="block text-xs font-black text-gray-500 uppercase tracking-[0.15em] mb-2 px-1">
+                    Middle Name
+                </label>
+                <input id="middle_name" type="text" name="middle_name" value="{{ old('middle_name', $user->middle_name ?? '') }}" 
+                    class="block w-full px-4 py-4 rounded-2xl border-gray-200 text-gray-900 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-400 border" 
+                    placeholder="Middle Name (Optional)">
+                <x-input-error :messages="$errors->get('middle_name')" class="mt-2" />
+            </div>
+
+            {{-- Last Name --}}
+            <div>
+                <label for="last_name" class="block text-xs font-black text-gray-500 uppercase tracking-[0.15em] mb-2 px-1">
+                    Last Name
+                </label>
+                <input id="last_name" type="text" name="last_name" value="{{ old('last_name', $user->last_name ?? '') }}" required 
+                    class="block w-full px-4 py-4 rounded-2xl border-gray-200 text-gray-900 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-400 border" 
+                    placeholder="Last Name">
+                <x-input-error :messages="$errors->get('last_name')" class="mt-2" />
+            </div>
         </div>
 
         {{-- Email Address --}}

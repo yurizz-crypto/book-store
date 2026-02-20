@@ -71,7 +71,7 @@
                                     <button type="button" @click="quantity++" class="w-10 h-10 flex items-center justify-center hover:bg-indigo-50 rounded-lg transition text-indigo-600 font-bold">+</button>
                                 </div>
                                 <button type="submit" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 active:scale-95">
-                                    Add to Cart
+                                    Order Now
                                 </button>
                             </div>
                         </form>
@@ -192,7 +192,7 @@
                     <div class="flex justify-between items-start">
                         <div class="flex items-center gap-4">
                             <div class="h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-black">
-                                {{ substr($review->user->name, 0, 1) }}
+                                {{ substr($review->user->getFullName(), 0, 1) }}
                             </div>
                             <div>
                                 <p class="font-black text-gray-900 leading-none">{{ $review->user->name }}</p>

@@ -92,7 +92,7 @@
                         <form action="{{ route('orders.update', $order) }}" method="POST">
                             @csrf @method('PATCH')
                             <input type="hidden" name="status" value="cancelled">
-                            <button type="submit" onclick="return confirm('Cancel this order?')" class="text-rose-500 text-[10px] font-black uppercase tracking-widest hover:text-rose-700 transition">Cancel Order</button>
+                            <button type="submit" onclick="return confirm('Cancel this order?')" class="px-5 py-2.5 bg-gray-100 text-red-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-200 transition active:scale-95">Cancel Order</button>
                         </form>
                     @endif
                 </div>

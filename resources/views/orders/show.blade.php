@@ -14,8 +14,10 @@
         <div class="border-t border-b border-gray-100 py-6 mb-6">
             @foreach($order->orderItems as $item)
                 <div class="flex justify-between items-center">
-                    <span class="font-bold text-gray-800">{{ $item->book->title }} (x{{ $item->quantity }})</span>
-                    <span class="font-mono">₱ {{ number_format($item->unit_price * $item->quantity, 2) }}</span>
+                    <a href="{{ route('books.show', $item->book->id) }}">
+                        <span class="font-bold text-gray-800">{{ $item->book->title }} (x{{ $item->quantity }})</span>
+                        <span class="font-mono">₱ {{ number_format($item->unit_price * $item->quantity, 2) }}</span>
+                    </a>
                 </div>
             @endforeach
         </div>

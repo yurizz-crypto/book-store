@@ -28,7 +28,6 @@ Route::get('/categories/{category}', [CategoryController::class, 'show'])->name(
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
-    
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
@@ -39,6 +38,15 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes (Verified)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified'])->group(function () {
     // Review System
     Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');

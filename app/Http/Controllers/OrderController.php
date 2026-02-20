@@ -12,14 +12,18 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->query('status', 'pending');
-        $query = Order::where('status', $status)->with('orderItems.book');
-
-        if (!Auth::user()->isAdmin()) {
-            $query->where('user_id', Auth::id());
+        if (Auth::user()->isAdmin()) {
+            return redirect()->route('admin.orders.index');
         }
 
-        $orders = $query->latest()->paginate(10);
+        $status = $request->query('status', 'pending');
+        
+        $orders = Order::where('user_id', Auth::id())
+            ->where('status', $status)
+            ->with('orderItems.book')
+            ->latest()
+            ->paginate(10);
+
         return view('orders.index', compact('orders', 'status'));
     }
 

@@ -41,8 +41,8 @@
                     <span class="text-xs font-black uppercase tracking-widest text-base-content">Browse Catalog</span>
                 </a>
 
-                @if (!auth()->user()->isAdmin())
-                    <a href="{{ route('orders.index') }}" class="p-8 text-center hover:bg-base-200 transition-colors group border-x border-base-200">
+                @if (!Auth::user()->isAdmin())
+                    <a href="{{ route('orders.index', 'status=cart') }}" class="p-8 text-center hover:bg-base-200 transition-colors group border-x border-base-200">
                         <div class="text-indigo-600 mb-2 group-hover:scale-110 transition-transform">
                             <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                         </div>

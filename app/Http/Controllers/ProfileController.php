@@ -37,6 +37,23 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
+    public function updateAddress(Request $request)
+    {
+        $validated = $request->validate([
+            'street_address' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:255'],
+            'postal_code' => ['required', 'string', 'max:20'],
+            'country' => ['required', 'string', 'max:100'],
+        ]);
+
+        $request->user()->addresses()->updateOrCreate(
+            ['is_default' => true],
+            $validated
+        );
+
+        return back()->with('status', 'address-updated');
+    }
+
     /**
      * Delete the user's account.
      */

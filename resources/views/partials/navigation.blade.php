@@ -22,7 +22,7 @@
                 @endguest
 
                 @auth
-                    @if(auth()->user()->role === 'admin')
+                    @if(Auth::user()->isAdmin())
                         <div class="hidden lg:flex items-center bg-indigo-700 rounded-2xl px-2 py-1 mr-2 border border-indigo-400/30">
                             <a href="{{ route('admin.books.create') }}" class="p-2 hover:text-indigo-200" title="Add Book">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -32,17 +32,20 @@
 
                     @auth
                         @php
-                            if(auth()->user()->role === 'admin') {
+                            if(Auth::user()->isAdmin()) {
                                 $orderCount = \App\Models\Order::where('status', 'pending')->count();
+                                $iconRoute = route('admin.orders.index', ['status' => 'pending']);
                             } else {
-                                $orderCount = auth()->user()->orders()->where('status', 'pending')->count();
+                                $activeCart = Auth::user()->orders()->where('status', 'cart')->first();
+                                $orderCount = $activeCart ? $activeCart->orderItems()->sum('quantity') : 0;
+                                $iconRoute = route('orders.index', ['status' => 'cart']);
                             }
                         @endphp
 
-                        <a href="{{ route(auth()->user()->role === 'admin' ? 'admin.orders.index' : 'orders.index') }}" 
+                        <a href="{{ $iconRoute }}" 
                         class="relative p-2 hover:bg-indigo-500 rounded-2xl transition group flex items-center justify-center">
                             
-                            @if(auth()->user()->role === 'admin')
+                            @if(Auth::user()->isAdmin())
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                 </svg>
@@ -56,22 +59,21 @@
                                 <span class="absolute -top-1 -right-1 flex h-5 w-5">
                                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-300 opacity-75"></span>
                                     <span class="relative inline-flex rounded-full h-5 w-5 bg-white text-[10px] font-black text-indigo-600 items-center justify-center shadow-sm">
-                                        {{ $orderCount > 9 ? '9+' : $orderCount }}
+                                        {{ $orderCount > 99 ? '99+' : $orderCount }}
                                     </span>
                                 </span>
                             @endif
                         </a>
                     @endauth
 
-                    {{-- User Dropdown Area --}}
                     <div class="flex items-center gap-3 pl-4 border-l border-indigo-400/50">
                         <div class="hidden flex-col items-end md:flex">
-                            <span class="text-xs font-black uppercase tracking-widest">{{ auth()->user()->first_name }}</span>
-                            <span class="text-[10px] text-indigo-200 font-bold uppercase tracking-tighter">{{ auth()->user()->role }}</span>
+                            <span class="text-xs font-black uppercase tracking-widest">{{ Auth::user()->first_name }}</span>
+                            <span class="text-[10px] text-indigo-200 font-bold uppercase tracking-tighter">{{ Auth::user()->role }}</span>
                         </div>
                         
                         <a href="{{ route('profile.edit') }}" class="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 font-black shadow-inner">
-                            {{ substr(auth()->user()->first_name, 0, 1) }}
+                            {{ substr(Auth::user()->first_name, 0, 1) }}
                         </a>
 
                         <form method="POST" action="{{ route('logout') }}" class="inline">

@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     use HasFactory;
-    protected $fillable = ['user_id', 'total_amount', 'status'];
-    
+    protected $fillable = ['user_id', 'total_amount', 'status', 'address_id'];  
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -17,5 +17,10 @@ class Order extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(Address::class);
     }
 }

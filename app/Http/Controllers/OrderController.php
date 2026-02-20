@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\OrderItem;
+use Illuminate\Support\Facades\DB;
 use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +15,7 @@ class OrderController extends Controller
         $status = $request->query('status', 'pending');
         $query = Order::where('status', $status)->with('orderItems.book');
 
-        if (Auth::user()->role !== 'admin') {
+        if (!Auth::user()->isAdmin()) {
             $query->where('user_id', Auth::id());
         }
 
@@ -38,36 +38,69 @@ class OrderController extends Controller
 
         $book = Book::findOrFail($request->book_id);
         
-        $order = Order::create([
-            'user_id' => Auth::id(),
-            'total_amount' => $book->price * $request->quantity,
-            'status' => 'pending',
-        ]);
+        $order = Order::firstOrCreate(
+            ['user_id' => Auth::id(), 'status' => 'cart'],
+            ['total_amount' => 0]
+        );
 
-        OrderItem::create([
-            'order_id' => $order->id,
-            'book_id' => $book->id,
-            'quantity' => $request->quantity,
-            'unit_price' => $book->price,
-        ]);
+        $item = $order->orderItems()->where('book_id', $book->id)->first();
 
-        return redirect()->route('orders.index', ['status' => 'pending'])
-            ->with('success', 'Order placed successfully!');
+        if ($item) {
+            $item->update([
+                'quantity' => $item->quantity + $request->quantity,
+                'unit_price' => $book->price
+            ]);
+        } else {
+            $order->orderItems()->create([
+                'book_id' => $book->id,
+                'quantity' => $request->quantity,
+                'unit_price' => $book->price
+            ]);
+        }
+
+        $order->load('orderItems');
+        
+        $order->update([
+            'total_amount' => $order->orderItems->sum(function($item) {
+                return $item->quantity * $item->unit_price;
+            })
+        ]);
+        
+        return redirect()->route('orders.index', ['status' => 'cart'])
+            ->with('success', 'Added to cart!');
     }
 
     public function update(Request $request, Order $order)
     {
-        if (Auth::user()->role !== 'admin' && $order->status === 'completed') {
+        if (!Auth::user()->isAdmin() && $order->status === 'completed') {
             return back()->with('error', 'Completed orders are locked.');
         }
 
-        if (Auth::user()->role === 'admin') {
+        if (Auth::user()->isAdmin()) {
             $order->update(['status' => $request->status]);
         } elseif ($order->status === 'pending' && $request->status === 'cancelled') {
             $order->update(['status' => 'cancelled']);
+        } elseif ($order->status === 'cart' && $request->status === 'cancelled') {
+            $order->delete();
         }
 
         return back()->with('success', 'Order updated!');
+    }
+
+    public function checkout(Request $request, Order $order)
+    {
+        if (!Auth::user()->hasAddress()) {
+            return redirect()->route('profile.edit')
+                ->with('error', 'Please add a shipping address before checking out.');
+        }
+
+        $order->update([
+            'status' => 'pending',
+            'address_id' => Auth::user()->addresses()->where('is_default', true)->first()->id,
+        ]);
+
+        return redirect()->route('orders.index', ['status' => 'pending'])
+            ->with('success', 'Order placed! Please wait for confirmation.');
     }
 
     public function adminIndex(Request $request)
@@ -75,6 +108,7 @@ class OrderController extends Controller
         $status = $request->query('status', 'pending');
 
         $orders = Order::where('status', $status)
+            ->where('status', '!=', 'cart')
             ->with(['user', 'orderItems.book'])
             ->latest()
             ->paginate(15);

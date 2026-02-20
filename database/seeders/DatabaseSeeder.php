@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\Address; // Important: Import the Address model
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -17,13 +18,20 @@ class DatabaseSeeder extends Seeder
     {
         User::factory()->create([
             'first_name' => 'Admin',
-            'middle_name' => null, // or 'Q'
+            'middle_name' => null,
             'last_name' => 'User',
             'email' => 'admin@pageturner.com',
             'role' => 'admin',
         ]);
         
         $customers = User::factory(10)->create(['role' => 'customer']);
+
+        $customers->each(function ($customer) {
+            Address::factory()->create([
+                'user_id' => $customer->id,
+                'is_default' => true,
+            ]);
+        });
 
         $categories = Category::factory(8)->create();
 

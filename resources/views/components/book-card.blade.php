@@ -45,19 +45,19 @@
             </a>
 
             @auth
-                @if(auth()->user()->role === 'customer')
+                @if(!Auth::user()->isAdmin())
                     <form action="{{ route('orders.store') }}" method="POST">
                         @csrf
                         <input type="hidden" name="book_id" value="{{ $book->id }}">
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="w-full bg-amber-400 text-amber-950 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-amber-100 hover:bg-amber-500 hover:shadow-amber-200 active:scale-95 transition-all duration-300">
-                            Order Now
+                            Add to Cart
                         </button>
                     </form>
                 @endif
             @else
                 <a href="{{ route('login') }}" class="block text-center bg-amber-400 text-amber-950 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-amber-500 transition-all duration-300">
-                    Order Now
+                    Add to Cart
                 </a>
             @endauth
         </div>

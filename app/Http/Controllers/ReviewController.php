@@ -16,12 +16,12 @@ class ReviewController extends Controller
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        $hasCompletedOrder = $request->user()->orders()
+        $hasCompletedOrder = Auth::user()->orders()
             ->where('status', 'completed')
             ->whereHas('orderItems', fn($q) => $q->where('book_id', $book->id))
             ->exists();
 
-        if (!$hasCompletedOrder && $request->user()->role !== 'admin') {
+        if (!$hasCompletedOrder && !Auth::user()->isAdmin()) {
             return back()->with('error', 'You must have a completed order for this book to leave a review.');
         }
 
@@ -42,7 +42,7 @@ class ReviewController extends Controller
 
     public function destroy(Review $review)
     {
-        if (Auth::id() !== $review->user_id && Auth::user()->role !== 'admin') {
+        if (Auth::id() !== $review->user_id && !Auth::user()->isAdmin()) {
             abort(403, 'Unauthorized action.');
         }
 

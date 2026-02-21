@@ -1,9 +1,12 @@
 <x-guest-layout title="Login | PageTurner">
     {{-- Header Section --}}
     <div class="text-center mb-10">
-        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">
+        <h2 class="text-4xl font-black text-[#001BB7] tracking-tighter uppercase leading-none">
             Welcome back
         </h2>
+        <p class="text-[#0046FF]/60 font-bold mt-2 text-sm uppercase tracking-widest">
+            Enter your library credentials
+        </p>
     </div>
 
     {{-- Session Status --}}
@@ -14,18 +17,16 @@
 
         {{-- Email Address --}}
         <div>
-            <label for="email" class="block text-xs font-black text-gray-500 uppercase tracking-[0.15em] mb-2">
-                Email Address
-            </label>
-            <div class="relative">
+            <x-input-label for="email" :value="__('Email Address')" />
+            <div class="relative mt-2">
                 <input id="email" 
                        type="email" 
                        name="email" 
                        value="{{ old('email') }}" 
                        required 
                        autofocus 
-                       class="block w-full px-4 py-4 rounded-2xl border-gray-200 text-gray-900 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-400 border" 
-                       placeholder="Email">
+                       class="block w-full px-5 py-4 rounded-2xl bg-[#F5F1DC]/30 border-[#0046FF]/10 text-[#001BB7] font-bold placeholder-[#001BB7]/20 shadow-sm focus:ring-4 focus:ring-[#0046FF]/5 focus:border-[#0046FF] transition-all border" 
+                       placeholder="reader@pageturner.com">
             </div>
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
@@ -33,12 +34,10 @@
         {{-- Password --}}
         <div>
             <div class="flex items-center justify-between mb-2">
-                <label for="password" class="block text-xs font-black text-gray-500 uppercase tracking-[0.15em]">
-                    Password
-                </label>
+                <x-input-label for="password" :value="__('Password')" />
                 @if (Route::has('password.request'))
-                    <a class="text-xs font-bold text-indigo-600 hover:text-indigo-500 transition-colors" href="{{ route('password.request') }}">
-                        Forgot Password?
+                    <a class="text-[10px] font-black uppercase tracking-widest text-[#0046FF] hover:text-[#FF8040] transition-colors" href="{{ route('password.request') }}">
+                        Forgot?
                     </a>
                 @endif
             </div>
@@ -47,8 +46,8 @@
                        type="password" 
                        name="password" 
                        required 
-                       class="block w-full px-4 py-4 rounded-2xl border-gray-200 text-gray-900 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-400 border" 
-                       placeholder="Password">
+                       class="block w-full px-5 py-4 rounded-2xl bg-[#F5F1DC]/30 border-[#0046FF]/10 text-[#001BB7] font-bold placeholder-[#001BB7]/20 shadow-sm focus:ring-4 focus:ring-[#0046FF]/5 focus:border-[#0046FF] transition-all border" 
+                       placeholder="••••••••">
             </div>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
@@ -56,8 +55,8 @@
         {{-- Remember Me --}}
         <div class="flex items-center">
             <label for="remember_me" class="inline-flex items-center group cursor-pointer">
-                <input id="remember_me" type="checkbox" class="w-5 h-5 rounded-lg border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 transition cursor-pointer" name="remember">
-                <span class="ms-3 text-sm font-semibold text-gray-600 group-hover:text-gray-900 transition-colors">
+                <input id="remember_me" type="checkbox" class="w-5 h-5 rounded-lg border-[#0046FF]/20 text-[#001BB7] shadow-sm focus:ring-[#0046FF] transition cursor-pointer" name="remember">
+                <span class="ms-3 text-xs font-black uppercase tracking-widest text-[#001BB7]/40 group-hover:text-[#001BB7] transition-colors">
                     Keep me signed in
                 </span>
             </label>
@@ -65,19 +64,19 @@
 
         {{-- Login Button --}}
         <div class="pt-2">
-            <button type="submit" class="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-black rounded-2xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all shadow-xl shadow-indigo-100 active:scale-[0.98]">
-                <span class="absolute left-0 inset-y-0 flex items-center pl-4">
-                    <svg class="h-5 w-5 text-indigo-300 group-hover:text-indigo-200 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+            <button type="submit" class="group relative w-full flex justify-center py-5 px-4 border border-transparent text-xs font-black rounded-2xl text-white bg-[#FF8040] hover:bg-[#ff9663] focus:outline-none focus:ring-4 focus:ring-[#FF8040]/20 transition-all shadow-xl shadow-[#FF8040]/20 active:scale-[0.98] uppercase tracking-[0.2em]">
+                <span class="absolute left-0 inset-y-0 flex items-center pl-5">
+                    <svg class="h-4 w-4 text-white/40 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                     </svg>
                 </span>
-                LOG IN
+                Log In
             </button>
         </div>
 
-        <p class="mt-3 text-sm text-gray-600 text-center">
-            Don't have an account? 
-            <a href="{{ route('register') }}" class="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
+        <p class="mt-4 text-[10px] font-black uppercase tracking-widest text-[#001BB7]/40 text-center">
+            New here? 
+            <a href="{{ route('register') }}" class="text-[#0046FF] hover:text-[#FF8040] transition-colors border-b-2 border-[#0046FF]/10">
                 Create an account
             </a>
         </p>

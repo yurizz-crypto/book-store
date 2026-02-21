@@ -82,6 +82,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
     
     Route::get('/orders', [OrderController::class, 'adminIndex'])->name('orders.index');
+    Route::patch('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
 });
 
 require __DIR__.'/auth.php';

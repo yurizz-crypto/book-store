@@ -55,7 +55,7 @@ class BookController extends Controller
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'isbn' => 'required|string|unique:books',
-            'price' => 'required|numeric|min:50000',
+            'price' => 'required|numeric|min:50',
             'stock_quantity' => 'required|integer|min:1',
             'description' => 'nullable|string',
             'cover_image' => 'nullable|image|max:2048',

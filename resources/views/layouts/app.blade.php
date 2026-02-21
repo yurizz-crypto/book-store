@@ -9,7 +9,7 @@
 
         <link rel="preconnect" href="https://fonts.bunny.net">
 
-        <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="cupcake"></html>
+        <html lang="{{ str_replace('_', '-', app()->getLocale()) }}"></html>
         
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 

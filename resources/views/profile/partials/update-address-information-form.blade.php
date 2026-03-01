@@ -44,7 +44,7 @@
         </div>
 
         <div class="flex items-center gap-4 pt-4">
-            <x-primary-button class="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-6 py-2.5 transition-all shadow-md shadow-indigo-100">
+            <x-primary-button class="hover:bg-indigo-700 rounded-xl px-6 py-2.5 transition-all shadow-md shadow-indigo-100">
                 {{ __('Save Address') }}
             </x-primary-button>
 

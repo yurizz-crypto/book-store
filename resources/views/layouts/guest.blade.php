@@ -19,7 +19,7 @@
     <body class="font-sans text-[#001BB7] antialiased">
         {{-- Background uses your Cream palette color --}}
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-[#F5F1DC]">
-            <div class="mb-8 transition-transform hover:scale-105 duration-300">
+            <div class="mb-8 transition-transform hover:scale-105 duration-300 pt-10">
                 <a href="/" class="flex flex-col items-center gap-2">
                     <x-application-logo/>
                 </a>
@@ -34,7 +34,7 @@
             </div>
 
             {{-- Subtle footer for guest pages --}}
-            <div class="mt-8">
+            <div class="mt-8 pb-10">
                 <a href="/" class="text-xs font-black uppercase tracking-widest text-[#001BB7]/40 hover:text-[#FF8040] transition-colors">
                     &larr; Back to Bookstore
                 </a>

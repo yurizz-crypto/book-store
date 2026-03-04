@@ -12,10 +12,6 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        if (Auth::user()->isAdmin()) {
-            return redirect()->route('admin.orders.index');
-        }
-
         $status = $request->query('status', 'pending');
         
         $orders = Order::where('user_id', Auth::id())
@@ -41,7 +37,12 @@ class OrderController extends Controller
         ]);
 
         $book = Book::findOrFail($request->book_id);
-        
+
+        // Check if enough stock exists before adding to cart
+        if ($book->stock_quantity < $request->quantity) {
+            return back()->with('error', "Only {$book->stock_quantity} units left in stock.");
+        }
+
         $order = Order::firstOrCreate(
             ['user_id' => Auth::id(), 'status' => 'cart'],
             ['total_amount' => 0]
@@ -63,48 +64,65 @@ class OrderController extends Controller
         }
 
         $order->load('orderItems');
-        
         $order->update([
-            'total_amount' => $order->orderItems->sum(function($item) {
-                return $item->quantity * $item->unit_price;
-            })
+            'total_amount' => $order->orderItems->sum(fn($i) => $i->quantity * $i->unit_price)
         ]);
         
-        return redirect()->route('orders.index', ['status' => 'cart'])
-            ->with('success', 'Added to cart!');
-    }
-
-    public function update(Request $request, Order $order)
-    {
-        if (!Auth::user()->isAdmin() && $order->status === 'completed') {
-            return back()->with('error', 'Completed orders are locked.');
-        }
-
-        if (Auth::user()->isAdmin()) {
-            $order->update(['status' => $request->status]);
-        } elseif ($order->status === 'pending' && $request->status === 'cancelled') {
-            $order->update(['status' => 'cancelled']);
-        } elseif ($order->status === 'cart' && $request->status === 'cancelled') {
-            $order->delete();
-        }
-
-        return back()->with('success', 'Order updated!');
+        return redirect()->route('orders.index', ['status' => 'cart'])->with('success', 'Added to cart!');
     }
 
     public function checkout(Request $request, Order $order)
     {
         if (!Auth::user()->hasAddress()) {
-            return redirect()->route('profile.edit')
-                ->with('error', 'Please add a shipping address before checking out.');
+            return redirect()->route('profile.edit')->with('error', 'Please add a shipping address.');
         }
 
-        $order->update([
-            'status' => 'pending',
-            'address_id' => Auth::user()->addresses()->where('is_default', true)->first()->id,
-        ]);
+        return DB::transaction(function () use ($order) {
+            foreach ($order->orderItems as $item) {
+                $book = $item->book;
+                if ($book->stock_quantity < $item->quantity) {
+                    throw new \Exception("The book '{$book->title}' is now out of stock.");
+                }
+                
+                $book->decrement('stock_quantity', $item->quantity);
+            }
 
-        return redirect()->route('orders.index', ['status' => 'pending'])
-            ->with('success', 'Order placed! Please wait for confirmation.');
+            $order->update([
+                'status' => 'pending',
+                'address_id' => Auth::user()->addresses()->where('is_default', true)->first()->id,
+            ]);
+
+            return redirect()->route('orders.index', ['status' => 'pending'])
+                ->with('success', 'Order placed successfully!');
+        });
+    }
+
+    public function update(Request $request, Order $order)
+    {
+        $oldStatus = $order->status;
+        $newStatus = $request->status;
+
+        if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled' && $oldStatus !== 'cart') {
+            DB::transaction(function () use ($order) {
+                foreach ($order->orderItems as $item) {
+                    $item->book->increment('stock_quantity', $item->quantity);
+                }
+                $order->update(['status' => 'cancelled']);
+            });
+            return back()->with('success', 'Order cancelled and stock restored.');
+        }
+
+        if (Auth::user()->isAdmin()) {
+            $order->update(['status' => $newStatus]);
+            return back()->with('success', 'Status updated.');
+        }
+
+        if ($oldStatus === 'cart' && $newStatus === 'cancelled') {
+            $order->delete();
+            return back()->with('success', 'Cart cleared.');
+        }
+
+        return back()->with('error', 'Unauthorized action.');
     }
 
     public function adminIndex(Request $request)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Book;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -13,9 +14,11 @@ class BookController extends Controller
         $query = Book::query();
 
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%')
-                ->orWhere('author', 'like', '%' . $request->search . '%');
+            $searchTerm = trim($request->search);
+
+            $query->where(function($q) use ($searchTerm) {
+                $q->where(DB::raw('LOWER(title)'), 'like', '%' . strtolower($searchTerm) . '%')
+                ->orWhere(DB::raw('LOWER(author)'), 'like', '%' . strtolower($searchTerm) . '%');
             });
         }
 
@@ -23,6 +26,7 @@ class BookController extends Controller
             $query->where('category_id', $request->category);
         }
 
+        // Sort logic
         switch ($request->sort) {
             case 'price_asc':
                 $query->orderBy('price', 'asc');
@@ -36,7 +40,6 @@ class BookController extends Controller
         }
 
         $books = $query->paginate(12)->withQueryString();
-        
         $categories = Category::all();
 
         return view('books.index', compact('books', 'categories'));

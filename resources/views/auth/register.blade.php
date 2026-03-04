@@ -68,7 +68,7 @@
                            name="password" 
                            required 
                            class="block w-full px-5 py-4 rounded-2xl bg-[#F5F1DC]/30 border-[#0046FF]/10 text-[#001BB7] font-bold placeholder-[#001BB7]/20 shadow-sm focus:ring-4 focus:ring-[#0046FF]/5 focus:border-[#0046FF] transition-all border" 
-                           placeholder="••••••••">
+                           placeholder="">
                 </div>
             </div>
 
@@ -81,7 +81,7 @@
                            name="password_confirmation" 
                            required 
                            class="block w-full px-5 py-4 rounded-2xl bg-[#F5F1DC]/30 border-[#0046FF]/10 text-[#001BB7] font-bold placeholder-[#001BB7]/20 shadow-sm focus:ring-4 focus:ring-[#0046FF]/5 focus:border-[#0046FF] transition-all border" 
-                           placeholder="••••••••">
+                           placeholder="">
                 </div>
             </div>
         </div>

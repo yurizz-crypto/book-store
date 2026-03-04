@@ -2,10 +2,10 @@
     {{-- Header Section --}}
     <div class="text-center mb-10">
         <h2 class="text-4xl font-black text-[#001BB7] tracking-tighter uppercase leading-none">
-            Welcome back
+            Welcome
         </h2>
         <p class="text-[#0046FF]/60 font-bold mt-2 text-sm uppercase tracking-widest">
-            Enter your library credentials
+            Enter your credentials
         </p>
     </div>
 
@@ -47,7 +47,7 @@
                        name="password" 
                        required 
                        class="block w-full px-5 py-4 rounded-2xl bg-[#F5F1DC]/30 border-[#0046FF]/10 text-[#001BB7] font-bold placeholder-[#001BB7]/20 shadow-sm focus:ring-4 focus:ring-[#0046FF]/5 focus:border-[#0046FF] transition-all border" 
-                       placeholder="••••••••">
+                       placeholder="">
             </div>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>

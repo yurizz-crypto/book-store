@@ -98,7 +98,7 @@
                         </div>
                         <div>
                             <span class="block text-[9px] font-black uppercase tracking-widest text-[#001BB7]/40 mb-1">Availability</span>
-                            <span class="font-black text-[#001BB7] text-lg">{{ $book->stock_quantity }} Editions</span>
+                            <span class="font-black text-[#001BB7] text-lg">{{ $book->stock_quantity }}</span>
                         </div>
                     </div>
                 </div>

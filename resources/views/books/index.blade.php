@@ -16,7 +16,6 @@
             <form action="{{ route('books.index') }}" method="GET" class="relative">
                 <div class="bg-white rounded-[2rem] shadow-2xl shadow-[#001BB7]/5 border border-[#0046FF]/10 p-2 flex flex-col lg:flex-row items-center gap-3">
                     
-                    {{-- Search Input with Electric Blue Icon --}}
                     <div class="relative flex-1 w-full group">
                         <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-[#0046FF] transition-colors group-focus-within:text-[#FF8040]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">

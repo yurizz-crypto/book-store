@@ -7,16 +7,23 @@
         <div class="md:flex">
             {{-- Book Cover with Brand Backdrop --}}
             <div class="md:w-1/3 bg-[#F5F1DC]/30 p-12 flex items-center justify-center border-r border-[#F5F1DC]">
-                @if($book->cover_image)
-                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" 
-                         class="max-h-[500px] object-contain shadow-[20px_20px_60px_rgba(0,27,183,0.15)] rounded-r-lg -rotate-2 hover:rotate-0 transition-all duration-700">
-                @else
-                    <div class="text-[#0046FF]/20">
-                        <svg class="h-48 w-48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                    </div>
-                @endif
+                {{-- Fixed Container: Aspect Ratio 3/4 --}}
+                <div class="w-full max-w-[320px] aspect-[3/4] relative group">
+                    @if($book->cover_image)
+                        {{-- 
+                            object-cover: Fills the container (crops edges to fit)
+                            object-contain: Shows full image with "letterboxing" (no cropping)
+                        --}}
+                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" 
+                            class="w-full h-full object-cover shadow-[20px_20px_60px_rgba(0,27,183,0.15)] rounded-r-lg -rotate-2 group-hover:rotate-0 transition-all duration-700 border border-[#001BB7]/5">
+                    @else
+                        <div class="w-full h-full bg-[#001BB7]/5 rounded-r-lg flex items-center justify-center text-[#0046FF]/20">
+                            <svg class="h-24 w-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                    @endif
+                </div>
             </div>
 
             {{-- Book Details --}}

@@ -81,7 +81,33 @@
                 <x-book-card :book="$book" />
             @endforeach
         </div>
-        <div class="mt-20 pt-10 border-t border-[#F5F1DC]">
+        <div class="mt-20 pt-10 border-t border-[#F5F1DC] pageturner-pagination">
+            <style>
+                /* Custom CSS to override default Tailwind Pagination styles */
+                .pageturner-pagination nav div:first-child span, 
+                .pageturner-pagination nav div:first-child a {
+                    border-radius: 1rem !important;
+                    border-color: rgba(0, 70, 255, 0.1) !important;
+                    color: #001BB7 !important;
+                    font-weight: 900 !important;
+                    text-transform: uppercase !important;
+                    letter-spacing: 0.1em !important;
+                    font-size: 0.75rem !important;
+                }
+                
+                /* Style active and hover states */
+                .pageturner-pagination span[aria-current="page"] span {
+                    background-color: #001BB7 !important;
+                    color: #F5F1DC !important;
+                    border-color: #001BB7 !important;
+                }
+                
+                .pageturner-pagination a:hover {
+                    color: #FF8040 !important;
+                    border-color: #FF8040 !important;
+                    background-color: transparent !important;
+                }
+            </style>
             {{ $books->links() }}
         </div>
     @else

@@ -4,10 +4,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-indigo-500">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.963-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </svg>
-            {{ __('Account Details') }}
+            {{ __('Account & Security Details') }}
         </h2>
         <p class="mt-1 text-sm text-gray-500">
-            {{ __("Manage your username and primary contact email.") }}
+            {{ __("Manage your identity and advanced security settings.") }}
         </p>
     </header>
 
@@ -65,11 +65,50 @@
                     </div>
                 @endif
             </div>
+
+            {{-- Lab 4: Two-Factor Authentication Integration --}}
+            <div class="md:col-span-2 mt-4 pt-6 border-t border-gray-50">
+                <h3 class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-4">
+                    {{ __('Advanced Protection') }}
+                </h3>
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="two_factor_enabled" 
+                               name="two_factor_enabled" 
+                               type="checkbox" 
+                               value="1"
+                               {{ Auth::user()->two_factor_enabled ? 'checked' : '' }}
+                               class="w-5 h-5 text-indigo-600 border-gray-300 rounded-lg focus:ring-indigo-500 transition-all cursor-pointer">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="two_factor_enabled" class="font-bold text-gray-900 cursor-pointer">
+                            {{ __('Enable Two-Factor Authentication (2FA)') }}
+                        </label>
+                        <p class="text-gray-500 italic">
+                            {{ __('You will be required to enter an email-based code during login.') }}
+                        </p>
+                    </div>
+                </div>
+
+                @if (Auth::user()->two_factor_enabled)
+                    <div class="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-3">
+                        <div class="bg-emerald-500 p-1.5 rounded-full text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-semibold text-emerald-800">
+                            {{ __('Account status: 2FA Protected') }}
+                        </span>
+                    </div>
+                @endif
+            </div>
         </div>
 
         <div class="flex items-center gap-4 pt-4">
             <x-primary-button class="hover:bg-indigo-700 rounded-xl px-6 py-2.5 transition-all shadow-md shadow-indigo-100">
-                {{ __('Update Profile') }}
+                {{ __('Update Profile & Security') }}
             </x-primary-button>
 
             @if (session('status') === 'profile-updated')

@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Review;
+use App\Models\User;
+use App\Notifications\NewReviewAlert;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 
 class ReviewController extends Controller
 {
@@ -25,7 +28,7 @@ class ReviewController extends Controller
             return back()->with('error', 'You must have a completed order for this book to leave a review.');
         }
 
-        Review::updateOrCreate(
+        $review = Review::updateOrCreate(
             [
                 'user_id' => Auth::id(),
                 'book_id' => $book->id,
@@ -35,6 +38,9 @@ class ReviewController extends Controller
                 'comment' => $validated['comment'],
             ]
         );
+
+        $admins = User::where('role', 'admin')->get();
+        Notification::send($admins, new NewReviewAlert($review));
 
         return redirect()->route('books.show', $book)
             ->with('success', 'Review processed successfully!');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Notifications\TwoFactorStatusChanged;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,16 +28,16 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
-        
+        $old2fa = $user->two_factor_enabled; 
+
         $user->fill($request->validated());
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
+        
         $user->two_factor_enabled = $request->has('two_factor_enabled');
-
         $user->save();
+
+        if ($old2fa !== $user->two_factor_enabled) {
+            $user->notify(new TwoFactorStatusChanged($user->two_factor_enabled));
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

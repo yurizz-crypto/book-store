@@ -36,6 +36,7 @@ class TwoFactorCode extends Notification
     {
         return (new MailMessage)
             ->subject('Your PageTurner Login Code')
+            ->greeting('Hello ' . $notifiable->first_name . '!')
             ->line('Your two-factor authentication code is: ' . $notifiable->two_factor_code)
             ->line('The code will expire in 10 minutes.')
             ->line('If you did not attempt to log in, please ignore this email.');

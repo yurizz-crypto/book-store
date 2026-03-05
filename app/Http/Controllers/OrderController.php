@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use Illuminate\Support\Facades\DB;
 use App\Models\Book;
+use App\Models\User;
+use App\Notifications\NewOrderReceived;
+use App\Notifications\OrderStatusUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class OrderController extends Controller
 {
@@ -92,6 +96,9 @@ class OrderController extends Controller
                 'address_id' => Auth::user()->addresses()->where('is_default', true)->first()->id,
             ]);
 
+            $admins = User::where('role', 'admin')->get();
+            Notification::send($admins, new NewOrderReceived($order));
+
             return redirect()->route('orders.index', ['status' => 'pending'])
                 ->with('success', 'Order placed successfully!');
         });
@@ -113,8 +120,13 @@ class OrderController extends Controller
         }
 
         if (Auth::user()->isAdmin()) {
-            $order->update(['status' => $newStatus]);
-            return back()->with('success', 'Status updated.');
+            $order->update(['status' => $request->status]);
+
+            $order->load(['orderItems.book', 'user.addresses']); 
+
+            $order->user->notify(new OrderStatusUpdated($order));
+
+            return back()->with('success', 'Status updated and customer notified.');
         }
 
         if ($oldStatus === 'cart' && $newStatus === 'cancelled') {

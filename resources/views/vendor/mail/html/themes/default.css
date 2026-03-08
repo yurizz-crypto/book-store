@@ -6,6 +6,10 @@ body *:not(html):not(style):not(br):not(tr):not(code) {
     position: relative;
 }
 
+:root {
+    color-scheme: light dark;
+}
+
 body {
     -webkit-text-size-adjust: none;
     background-color: #F5F1DC;
@@ -142,3 +146,34 @@ h2, h3 {
     letter-spacing: 0.15em;
     text-align: center;
 }
+
+/* Dark Mode Overrides */
+@media (prefers-color-scheme: dark) {
+    body, .wrapper {
+        background-color: #111827 !important; /* Tailwind gray-900 */
+    }
+
+    .inner-body {
+        background-color: #1F2937 !important; /* Tailwind gray-800 */
+        border: 1px solid rgba(255, 128, 64, 0.2) !important;
+    }
+
+    h1, h2, h3, .header a, .panel-content {
+        color: #F9FAFB !important;
+    }
+
+    p, ul, ol, blockquote {
+        color: #D1D5DB !important;
+    }
+
+    .panel-content {
+        background-color: #111827 !important;
+    }
+
+    .footer p {
+        color: rgba(209, 213, 219, 0.4) !important;
+    }
+}
+
+[data-ogsc] .wrapper { background-color: #111827 !important; }
+[data-ogsc] .inner-body { background-color: #1F2937 !important; }

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Order;
 use App\Models\Book;
 use App\Models\User;
@@ -11,9 +11,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use App\Policies\OrderPolicy;
 
 class OrderController extends Controller
 {
+    use AuthorizesRequests;
+    
     public function index(Request $request)
     {
         $status = $request->query('status', 'pending');
@@ -29,6 +32,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
+        $this->authorize('view', $order);
         $order->load('orderItems.book', 'user');
         return view('orders.show', compact('order'));
     }

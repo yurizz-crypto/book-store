@@ -28,9 +28,20 @@
                     <h1 class="text-3xl font-black text-[#001BB7] tracking-tighter uppercase">Welcome, {{ Auth::user()->first_name }}!</h1>
                     <p class="text-[#0046FF]/60 font-bold mt-1">Reader since {{ Auth::user()->created_at->format('M Y') }}</p>
                 </div>
-                <div class="bg-white px-8 py-4 rounded-2xl border border-[#0046FF]/10 shadow-sm text-center">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-[#001BB7]/40 mb-1">Total Orders</p>
-                    <p class="text-3xl font-black text-[#001BB7]">{{ $totalOrders }}</p>
+
+                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    <div class="bg-white px-8 py-4 rounded-2xl border border-[#0046FF]/10 shadow-sm text-center flex-1">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-[#001BB7]/40 mb-1">Total Orders</p>
+                        <p class="text-3xl font-black text-[#001BB7]">{{ $totalOrders }}</p>
+                    </div>
+
+                    <div class="bg-[#001BB7] px-8 py-4 rounded-2xl shadow-lg text-center flex-1">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Total Spent</p>
+                        <div class="flex items-baseline justify-center gap-1 text-white">
+                            <span class="text-sm font-black text-[#FF8040]">₱</span>
+                            <p class="text-3xl font-black tracking-tighter">{{ number_format($totalSpent, 2) }}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -91,7 +102,7 @@
                 <h3 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-6">Recently Purchased</h3>
                 <div class="grid grid-cols-2 gap-4">
                     @forelse($recentBooks as $book)
-                        <a href="{{ route('books.show', $book) }}" class="group block p-4 rounded-[2rem] border border-transparent hover:border-[#001BB7]/10 hover:scale-[1.05] transition-all duration-300 shadow-sm hover:shadow-md">
+                        <a href="{{ route('books.show', $book) }}" class="group block p-4 rounded-[2rem] border border-transparent hover:border-[#001BB7]/10 hover:scale-[1.05] transition-all duration-300 shadow-sm hover:shadow-md text-center">
                             @if($book->cover_image)
                                 <div class="aspect-[3/4] rounded-xl border border-[#001BB7]/5 overflow-hidden mb-3 shadow-inner">
                                     <img src="{{ asset('storage/' . $book->cover_image) }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
@@ -103,7 +114,7 @@
                                     </svg>
                                 </div>
                             @endif
-                            <p class="text-[10px] font-black text-[#001BB7] uppercase truncate text-center">{{ $book->title }}</p>
+                            <p class="text-[10px] font-black text-[#001BB7] uppercase truncate">{{ $book->title }}</p>
                         </a>
                     @empty
                         <p class="col-span-2 text-sm font-bold text-[#001BB7]/40 italic">Library is empty.</p>
@@ -112,7 +123,6 @@
             </div>
         </div>
 
-        {{-- Review Activity --}}
         <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
             <h3 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-8">Your Review Activity</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

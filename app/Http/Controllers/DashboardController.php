@@ -44,11 +44,12 @@ class DashboardController extends Controller
         }
 
         return view('dashboard', [
-            'totalOrders'  => $user->orders()->count(),
-            'recentOrders' => $user->orders()->latest()->take(5)->get(),
-            'recentBooks'  => Book::whereHas('orderItems.order', function($q) use ($user) {
-                                $q->where('user_id', $user->id)->where('status', 'completed');
-                             })->latest()->take(4)->get(),
+                'totalOrders' => $user->orders()->where('status', '!=', 'cart')->count(),
+                'totalSpent'  => $user->orders()->where('status', 'completed')->sum('total_amount'), 
+                'recentOrders' => $user->orders()->where('status', '!=', 'cart')->latest()->take(5)->get(),
+                'recentBooks'  => Book::whereHas('orderItems.order', function($q) use ($user) {
+                                    $q->where('user_id', $user->id)->where('status', 'completed');
+                            })->latest()->take(4)->get(),
         ]);
     }
 }

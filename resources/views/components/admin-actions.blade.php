@@ -1,7 +1,7 @@
 @props(['editRoute', 'deleteRoute', 'item', 'label' => 'Item'])
 
 @auth
-    @if(auth()->user()->role === 'admin')
+    @if(Auth::user()->isAdmin())
         <div {{ $attributes->merge(['class' => 'inline-flex items-center gap-2 bg-[#F5F1DC] p-2 rounded-2xl border border-[#0046FF]/10 shadow-lg shadow-[#001BB7]/5 backdrop-blur-sm relative z-30']) }}>
             <div class="px-3 mr-1">
                 <span class="text-[10px] font-black uppercase tracking-widest text-[#001BB7] opacity-40">Actions</span>

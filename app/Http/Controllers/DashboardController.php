@@ -23,12 +23,17 @@ class DashboardController extends Controller
                 ->orderBy('date', 'ASC')
                 ->get();
 
+            $totalRevenue = Order::where('status', 'completed')->sum('total_amount');
+            $avgOrder = Order::where('status', 'completed')->avg('total_amount') ?? 0;
+
             return view('admin.dashboard', [
                 'stats' => [
                     'users'      => User::count(),
                     'books'      => Book::count(),
                     'categories' => Category::count(),
                     'orders'     => Order::count(),
+                    'revenue'    => $totalRevenue,
+                    'avgOrder'   => $avgOrder,
                 ],
                 'recentOrders'  => Order::with('user')->latest()->take(6)->get(),
                 'statusSummary' => Order::select('status', DB::raw('count(*) as total'))

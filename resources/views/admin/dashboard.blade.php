@@ -12,9 +12,33 @@
 @endsection
 
 @section('content')
-<div class="py-6 space-y-10">
+<div class="pb-10 pt-2 space-y-8">
     
-    {{-- 1. Management Quick Links (High Energy Grid) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-[#001BB7] p-10 rounded-[3.5rem] shadow-2xl shadow-[#001BB7]/20 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-[#FF8040] rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+            <div class="relative z-10">
+                <span class="text-[11px] font-black uppercase tracking-[0.3em] text-white/60">Gross Revenue</span>
+                <div class="flex items-baseline gap-2 mt-2">
+                    <span class="text-[#FF8040] text-2xl font-black">₱</span>
+                    <h3 class="text-6xl font-black text-white tracking-tighter">
+                        {{ number_format($stats['revenue'], 2) }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-10 rounded-[3.5rem] border border-[#0046FF]/5 shadow-xl flex flex-col justify-center">
+            <span class="text-[11px] font-black uppercase tracking-[0.3em] text-[#001BB7]/40">Average Order Value</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-[#001BB7] text-xl font-black">₱</span>
+                <h3 class="text-5xl font-black text-[#001BB7] tracking-tighter">
+                    {{ number_format($stats['avgOrder'], 2) }}
+                </h3>
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         @foreach([
             ['Books', 'books.index', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
@@ -33,7 +57,6 @@
         @endforeach
     </div>
 
-    {{-- 2. User Growth Section --}}
     <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
         <h2 class="text-2xl font-black text-[#001BB7] uppercase tracking-tighter mb-8 flex items-center gap-3">
             <div class="w-2 h-8 bg-[#FF8040] rounded-full"></div>
@@ -44,9 +67,7 @@
         </div>
     </div>
 
-    {{-- 3. Stats & Expanded Distribution Section --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {{-- Stats Stack --}}
         <div class="space-y-6">
             @foreach([
                 ['Readers', $stats['users'], 'bg-[#001BB7]'],
@@ -63,7 +84,6 @@
             @endforeach
         </div>
 
-        {{-- Fulfillment Section - HEIGHT INCREASED TO PREVENT CUTOFF --}}
         <div class="lg:col-span-2 bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl min-h-[450px]">
             <h2 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-6">Fulfillment Distribution</h2>
             <div class="relative h-[320px] w-full flex items-center justify-center">
@@ -72,7 +92,6 @@
         </div>
     </div>
 
-    {{-- 4. Logs & Feedback --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
             <div class="flex justify-between items-center mb-8">
@@ -117,7 +136,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // User Growth Line Chart
     new Chart(document.getElementById('userChart'), {
         type: 'line',
         data: {
@@ -145,7 +163,6 @@
                     grid: { display: false }, 
                     ticks: { 
                         font: { weight: 'bold' },
-                        // Force integers only by defining the step size
                         stepSize: 1,
                         precision: 0,
                         callback: function(value) {

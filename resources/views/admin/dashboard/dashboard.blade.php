@@ -13,36 +13,10 @@
 
 @section('content')
 <div class="pb-10 pt-2 space-y-8">
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="bg-[#001BB7] p-10 rounded-[3.5rem] shadow-2xl shadow-[#001BB7]/20 relative overflow-hidden group">
-            <div class="absolute -right-10 -top-10 w-40 h-40 bg-[#FF8040] rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
-            <div class="relative z-10">
-                <span class="text-[11px] font-black uppercase tracking-[0.3em] text-white/60">Gross Revenue</span>
-                <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-[#FF8040] text-2xl font-black">₱</span>
-                    <h3 class="text-6xl font-black text-white tracking-tighter">
-                        {{ number_format($stats['revenue'], 2) }}
-                    </h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-10 rounded-[3.5rem] border border-[#0046FF]/5 shadow-xl flex flex-col justify-center">
-            <span class="text-[11px] font-black uppercase tracking-[0.3em] text-[#001BB7]/40">Average Order Value</span>
-            <div class="flex items-baseline gap-2 mt-2">
-                <span class="text-[#001BB7] text-xl font-black">₱</span>
-                <h3 class="text-5xl font-black text-[#001BB7] tracking-tighter">
-                    {{ number_format($stats['avgOrder'], 2) }}
-                </h3>
-            </div>
-        </div>
-    </div>
-
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         @foreach([
             ['Add Book', 'admin.books.create', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
-            ['Categories', 'categories.index', 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'],
+            ['Add Category', 'admin.categories.create', 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'],
             ['Orders', 'admin.orders.index', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
             ['Settings', 'profile.edit', 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z']
         ] as [$label, $route, $path])
@@ -56,6 +30,18 @@
         </a>
         @endforeach
     </div>
+    
+    @include('admin.dashboard.partials._financials', [
+        'revenue' => $stats['revenue'], 
+        'avgOrder' => $stats['avgOrder']
+    ])
+
+    @include('admin.dashboard.partials._rankings', [
+        'topBooks' => $topBooks, 
+        'topCategories' => $topCategories
+    ])
+
+    @include('admin.dashboard.partials._inventory_warning', ['books' => $lowStock])
 
     <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
         <h2 class="text-2xl font-black text-[#001BB7] uppercase tracking-tighter mb-8 flex items-center gap-3">
@@ -165,17 +151,10 @@
                         font: { weight: 'bold' },
                         stepSize: 1,
                         precision: 0,
-                        callback: function(value) {
-                            if (Math.floor(value) === value) {
-                                return value;
-                            }
-                        }
+                        callback: function(value) { if (Math.floor(value) === value) return value; }
                     } 
                 },
-                x: { 
-                    grid: { display: false }, 
-                    ticks: { font: { weight: 'bold' } } 
-                }
+                x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
             }
         }
     });
@@ -199,12 +178,7 @@
             plugins: { 
                 legend: { 
                     position: 'bottom', 
-                    labels: { 
-                        boxWidth: 12, 
-                        usePointStyle: true, 
-                        font: { weight: 'bold', size: 11 }, 
-                        padding: 25 
-                    } 
+                    labels: { boxWidth: 12, usePointStyle: true, font: { weight: 'bold', size: 11 }, padding: 25 } 
                 } 
             }
         }

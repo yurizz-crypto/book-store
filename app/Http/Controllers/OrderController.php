@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use App\Policies\OrderPolicy;
+use App\Notifications\UserActionNotification;
 
 class OrderController extends Controller
 {
@@ -85,7 +86,7 @@ class OrderController extends Controller
             return redirect()->route('profile.edit')->with('error', 'Please add a shipping address.');
         }
 
-        return DB::transaction(function () use ($order) {
+        return DB::transaction(function () use ($order, $request) {
             foreach ($order->orderItems as $item) {
                 $book = $item->book;
                 if ($book->stock_quantity < $item->quantity) {
@@ -101,7 +102,23 @@ class OrderController extends Controller
             ]);
 
             $admins = User::where('role', 'admin')->get();
+            
+            // Existing Email Notification
             Notification::send($admins, new NewOrderReceived($order));
+
+            Notification::send($admins, new UserActionNotification('New Order Received', [
+                'order_id' => $order->id,
+                'total' => $order->total_amount,
+                // Direct them to the admin orders page
+                'url' => route('admin.orders.index', ['status' => 'pending']) 
+            ]));
+
+            $order->user->notify(new UserActionNotification('order_status_updated', [
+                'order_id' => $order->id,
+                'new_status' => $request->status,
+                // Direct them to their specific order details
+                'url' => route('orders.show', $order->id) 
+            ]));
 
             return redirect()->route('orders.index', ['status' => 'pending'])
                 ->with('success', 'Order placed successfully!');
@@ -128,7 +145,14 @@ class OrderController extends Controller
 
             $order->load(['orderItems.book', 'user.addresses']); 
 
+            // Existing Email Notification
             $order->user->notify(new OrderStatusUpdated($order));
+
+            // NEW: In-System Notification for Customer
+            $order->user->notify(new UserActionNotification('Order Status Updated', [
+                'order_id' => $order->id,
+                'new_status' => $request->status
+            ]));
 
             return back()->with('success', 'Status updated and customer notified.');
         }

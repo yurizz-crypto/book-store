@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Notifications\UserActionNotification;
 
 class ProfileController extends Controller
 {
@@ -37,6 +38,11 @@ class ProfileController extends Controller
 
         if ($old2fa !== $user->two_factor_enabled) {
             $user->notify(new TwoFactorStatusChanged($user->two_factor_enabled));
+
+            $statusString = $user->two_factor_enabled ? 'Enabled' : 'Disabled';
+            $user->notify(new UserActionNotification('Security Alert', [
+                'alert' => "Two-Factor Authentication was {$statusString}."
+            ]));
         }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');

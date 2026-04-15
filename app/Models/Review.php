@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Review extends Model
+class Review extends Model implements Auditable
 {
-    use HasFactory;
+    use HasFactory, AuditableTrait;
     
     protected $fillable = ['user_id', 'book_id', 'rating', 'comment'];
         public function user()

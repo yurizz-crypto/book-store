@@ -28,7 +28,6 @@
 
                 @auth
                     @php
-                        // Order Logic
                         if(Auth::user()->isAdmin()) {
                             $orderCount = \App\Models\Order::where('status', 'pending')->count();
                             $iconRoute = route('admin.orders.index', ['status' => 'pending']);
@@ -38,7 +37,6 @@
                             $iconRoute = route('orders.index', ['status' => 'cart']);
                         }
 
-                        // Notification Logic
                         $unreadNotifications = Auth::user()->unreadNotifications;
                         $unreadCount = $unreadNotifications->count();
                     @endphp
@@ -49,6 +47,13 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             </a>
                         </div>
+
+                        <div class="hidden lg:flex items-center bg-[#0046FF]/30 rounded-2xl px-2 py-1 mr-2 border border-[#F5F1DC]/20 hover:bg-[#0046FF]">
+                            <a href="{{ route('admin.audits.index') }}" class="text-sm font-bold uppercase tracking-widest px-4 py-2 rounded-xl transition-all">
+                                Audit Logs
+                            </a>
+                        </div>
+
                     @endif
 
                     <div class="relative group flex items-center h-full">
@@ -81,18 +86,15 @@
                                 @forelse($unreadNotifications as $notification)
                                     <div class="p-4 border-b border-[#001BB7]/10 hover:bg-white transition flex justify-between gap-3 text-[#001BB7] group/item">
                                         
-                                        {{-- THE CLICKABLE LINK AREA --}}
                                         <a href="{{ route('notifications.click', $notification->id) }}" class="flex-1 block">
                                             <p class="text-sm font-bold group-hover/item:text-[#0046FF] transition">{{ $notification->data['message'] ?? 'New Notification' }}</p>
                                             
-                                            {{-- Dynamic Display: Review Ratings --}}
                                             @if(isset($notification->data['details']['rating']))
                                                 <p class="text-xs text-gray-600 mt-1">
                                                     <span class="text-[#FF8040] font-black">{{ $notification->data['details']['rating'] }} ★ Star</span> review on <strong>{{ $notification->data['details']['book_title'] ?? 'a book' }}</strong>
                                                 </p>
                                             @endif
 
-                                            {{-- Dynamic Display: Order IDs --}}
                                             @if(isset($notification->data['details']['order_id']))
                                                 <p class="text-xs text-gray-600 mt-1">Order <span class="font-bold">#{{ $notification->data['details']['order_id'] }}</span></p>
                                             @endif
@@ -100,7 +102,6 @@
                                             <p class="text-[10px] text-gray-500 mt-2 uppercase font-semibold tracking-wider">{{ $notification->created_at->diffForHumans() }}</p>
                                         </a>
 
-                                        {{-- THE DISMISS BUTTON --}}
                                         <div>
                                             <form action="{{ route('notifications.read', $notification->id) }}" method="POST">
                                                 @csrf

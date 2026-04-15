@@ -9,6 +9,8 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Admin\AuditController;
+use App\Http\Controllers\Admin\DataPortabilityController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,6 +81,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     
     Route::get('/orders', [OrderController::class, 'adminIndex'])->name('orders.index');
     Route::patch('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
+
+    Route::get('/audits', [AuditController::class, 'index'])->name('audits.index');
+
+    Route::get('/export/books', [DataPortabilityController::class, 'exportBooks'])->name('export.books');
+    Route::post('/import/books', [DataPortabilityController::class, 'importBooks'])->name('import.books');
 });
 
 require __DIR__.'/auth.php';

@@ -76,7 +76,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {{-- Recent Orders --}}
             <div class="bg-white p-8 rounded-[2.5rem] border border-[#0046FF]/5 shadow-xl">
                 <h3 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-6">Recent Orders</h3>
                 <div class="space-y-4">

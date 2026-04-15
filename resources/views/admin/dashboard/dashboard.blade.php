@@ -30,6 +30,32 @@
         </a>
         @endforeach
     </div>
+
+    <div class="bg-gradient-to-r from-white to-[#F5F1DC]/30 p-8 rounded-[2.5rem] border border-[#0046FF]/5 shadow-xl flex flex-col lg:flex-row justify-between items-center gap-6">
+        <div class="flex-1">
+            <h2 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter">Data Management</h2>
+            <p class="text-xs font-bold text-[#0046FF]/60 tracking-wide mt-1">Import and export system records for compliance and offline analysis.</p>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+            <form action="{{ route('admin.import.books') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2 bg-white p-2 rounded-2xl border border-[#0046FF]/10 shadow-sm">
+                @csrf
+                <input type="file" name="import_file" accept=".xlsx,.csv" required class="text-xs font-bold text-[#001BB7] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
+                <button type="submit" class="bg-[#001BB7] text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all active:scale-95">
+                    Import
+                </button>
+            </form>
+
+            <span class="text-[#001BB7]/20 font-black">|</span>
+
+            <a href="{{ route('admin.export.books') }}" class="inline-flex items-center gap-2 bg-emerald-500 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/30 active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Export
+            </a>
+        </div>
+    </div>
     
     @include('admin.dashboard.partials._financials', [
         'revenue' => $stats['revenue'], 

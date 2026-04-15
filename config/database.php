@@ -84,9 +84,16 @@ return [
         ],
 
         'pgsql' => [
+            'read' => [
+                'host' => [env('DB_HOST', '127.0.0.1')],
+            ],
+            'write' => [
+                'host' => [env('DB_HOST', '127.0.0.1')], // In production, this would be the Primary DB IP
+            ],
+            'sticky' => true,
+        
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => env('DB_USERNAME', 'root'),
@@ -96,6 +103,11 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+
+            'dump' => [
+                'dump_binary_path' => 'C:\Program Files\PostgreSQL\17\bin',
+                'use_column_inserts' => true,
+            ]
         ],
 
         'sqlsrv' => [

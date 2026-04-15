@@ -18,7 +18,7 @@ return [
          * The name of this application. You can use this name to monitor
          * the backups.
          */
-        'name' => env('APP_NAME', 'laravel-backup'),
+        'name' => 'PageTurner_Back',
 
         'source' => [
             'files' => [
@@ -27,7 +27,6 @@ return [
                  */
                 'include' => [
                     base_path(),
-                    // storage_path(),  // Include if you use zero downtime deployments and don't follow symlinks
                 ],
 
                 /*
@@ -38,7 +37,7 @@ return [
                 'exclude' => [
                     base_path('vendor'),
                     base_path('node_modules'),
-                    storage_path('framework'),
+                    base_path('.git')
                 ],
 
                 /*
@@ -52,9 +51,7 @@ return [
                 'ignore_unreadable_directories' => false,
 
                 /*
-                 * This path is used to make directories in resulting zip-file relative
-                 * Set to `null` to include complete absolute path
-                 * Example: base_path()
+                 * This path is used to make absolute paths work for relative path calculations.
                  */
                 'relative_path' => null,
             ],
@@ -90,7 +87,7 @@ return [
              * For a complete list of available customization options, see https://github.com/spatie/db-dumper
              */
             'databases' => [
-                env('DB_CONNECTION', 'mysql'),
+                'pgsql',
             ],
         ],
 
@@ -236,11 +233,11 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            'to' => 'your@example.com',
+            'to' => 'admin@pageturner.com',
 
             'from' => [
-                'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-                'name' => env('MAIL_FROM_NAME', 'Example'),
+                'address' => env('MAIL_FROM_ADDRESS', 'system@pageturner.com'),
+                'name' => env('MAIL_FROM_NAME', 'PageTurner Backup System'),
             ],
         ],
 

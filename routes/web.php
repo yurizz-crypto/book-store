@@ -86,6 +86,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::get('/export/books', [DataPortabilityController::class, 'exportBooks'])->name('export.books');
     Route::post('/import/books', [DataPortabilityController::class, 'importBooks'])->name('import.books');
+
+    Route::get('/import/books/template', [DataPortabilityController::class, 'downloadTemplate'])->name('import.template');
 });
 
 require __DIR__.'/auth.php';

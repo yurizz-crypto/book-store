@@ -48,12 +48,18 @@
 
             <span class="text-[#001BB7]/20 font-black">|</span>
 
-            <a href="{{ route('admin.export.books') }}" class="inline-flex items-center gap-2 bg-emerald-500 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/30 active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                </svg>
-                Export
-            </a>
+            <div>
+                <button type="button" onclick="document.getElementById('exportModal').classList.remove('hidden')" class="inline-flex items-center gap-2 bg-emerald-500 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/30 active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Export Data
+                </button>
+                
+                <a href="{{ route('admin.import.template') }}" class="text-[#001BB7]/60 hover:text-[#001BB7] text-[10px] font-black uppercase tracking-widest underline transition-all ml-2 block text-center mt-2">
+                    Get Template
+                </a>
+            </div>
         </div>
     </div>
     
@@ -210,4 +216,7 @@
         }
     });
 </script>
+
+    @include('admin.dashboard.partials._export-modal')
+
 @endsection

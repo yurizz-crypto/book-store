@@ -4,13 +4,13 @@ namespace App\Models;
 
 use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
-
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use OwenIt\Auditing\Contracts\Audit;
 
+// 2. IMPLEMENT BackupNotifiable
 class User extends Authenticatable implements MustVerifyEmail, Auditable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -33,6 +33,9 @@ class User extends Authenticatable implements MustVerifyEmail, Auditable
         'two_factor_expires_at',
     ];
 
+    /**
+     * Audit configuration to prevent logging sensitive data
+     */
     protected $auditExclude = [
         'password',
         'remember_token',
@@ -64,8 +67,24 @@ class User extends Authenticatable implements MustVerifyEmail, Auditable
             'password' => 'hashed',
             'role',
             'two_factor_enabled' => 'boolean',
+            'two_factor_expires_at' => 'datetime',
         ];
     }
+
+    /**
+     * 3. ADD THIS METHOD for Spatie Backup
+     * Tells the package which email address to use for alerts.
+     */
+    public function routeNotificationForBackup()
+    {
+        return $this->email;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function orders()
     {
@@ -77,6 +96,17 @@ class User extends Authenticatable implements MustVerifyEmail, Auditable
         return $this->hasMany(Review::class);
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers & Logic
+    |--------------------------------------------------------------------------
+    */
+
     public function isAdmin()
     {
         return $this->role === 'admin';
@@ -85,11 +115,6 @@ class User extends Authenticatable implements MustVerifyEmail, Auditable
     public function getFullName()
     {
         return "{$this->first_name} {$this->middle_name} {$this->last_name}";
-    }
-
-    public function addresses()
-    {
-        return $this->hasMany(Address::class);
     }
 
     public function hasAddress()

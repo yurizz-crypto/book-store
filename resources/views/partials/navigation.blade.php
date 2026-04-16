@@ -83,40 +83,47 @@
                             </div>
 
                             <div class="max-h-80 overflow-y-auto">
-                                @forelse($unreadNotifications as $notification)
-                                    <div class="p-4 border-b border-[#001BB7]/10 hover:bg-white transition flex justify-between gap-3 text-[#001BB7] group/item">
-                                        
-                                        <a href="{{ route('notifications.click', $notification->id) }}" class="flex-1 block">
-                                            <p class="text-sm font-bold group-hover/item:text-[#0046FF] transition">{{ $notification->data['message'] ?? 'New Notification' }}</p>
-                                            
-                                            @if(isset($notification->data['details']['rating']))
-                                                <p class="text-xs text-gray-600 mt-1">
-                                                    <span class="text-[#FF8040] font-black">{{ $notification->data['details']['rating'] }} ★ Star</span> review on <strong>{{ $notification->data['details']['book_title'] ?? 'a book' }}</strong>
-                                                </p>
-                                            @endif
+                            @forelse(Auth::user()->unreadNotifications as $notification)
+                                <a href="{{ route('notifications.click', $notification->id) }}" class="block px-4 py-3 hover:bg-[#F5F1DC]/50 border-b border-[#001BB7]/5 transition-colors">
+                                    
+                                    {{-- 1. Dynamic Title --}}
+                                    <p class="text-xs font-black uppercase tracking-widest {{ isset($notification->data['title']) && str_contains($notification->data['title'], 'Critical') ? 'text-red-600' : 'text-[#001BB7]' }}">
+                                        {{ $notification->data['title'] ?? $notification->data['alert'] ?? 'System Notification' }}
+                                    </p>
 
-                                            @if(isset($notification->data['details']['order_id']))
-                                                <p class="text-xs text-gray-600 mt-1">Order <span class="font-bold">#{{ $notification->data['details']['order_id'] }}</span></p>
-                                            @endif
+                                    @if(isset($notification->data['details']['event']))
+                                        <div class="mt-1 text-[10px] text-gray-600 font-medium space-y-0.5">
+                                            <p><span class="font-bold text-[#001BB7]">Event:</span> {{ $notification->data['details']['event'] }}</p>
                                             
-                                            <p class="text-[10px] text-gray-500 mt-2 uppercase font-semibold tracking-wider">{{ $notification->created_at->diffForHumans() }}</p>
-                                        </a>
+                                            {{-- Only show Target if it exists --}}
+                                            @isset($notification->data['details']['target'])
+                                                <p><span class="font-bold">Target:</span> {{ $notification->data['details']['target'] }}</p>
+                                            @endisset
 
-                                        <div>
-                                            <form action="{{ route('notifications.read', $notification->id) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="text-[#FF8040] hover:text-[#0046FF] transition" title="Dismiss without viewing">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                                </button>
-                                            </form>
+                                            {{-- Only show IP if it exists (Security Alerts) --}}
+                                            @isset($notification->data['details']['ip'])
+                                                <p><span class="font-bold text-red-500">IP:</span> {{ $notification->data['details']['ip'] }}</p>
+                                            @endisset
                                         </div>
-                                    </div>
-                                @empty
-                                    <div class="p-6 text-center text-[#001BB7]/60 font-semibold text-sm">
-                                        You're all caught up!
-                                    </div>
-                                @endforelse
+                                    @endif
+
+                                    {{-- 3. Fallback for Standard Alerts (like your Backup notification) --}}
+                                    @if(isset($notification->data['message']) || isset($notification->data['alert']))
+                                        <p class="mt-1 text-[10px] text-gray-500 font-medium">
+                                            {{ $notification->data['message'] ?? $notification->data['alert'] ?? '' }}
+                                        </p>
+                                    @endif
+
+                                    {{-- Timestamp --}}
+                                    <p class="text-[9px] text-[#FF8040] font-black uppercase mt-2">
+                                        {{ $notification->created_at->diffForHumans() }}
+                                    </p>
+                                </a>
+                            @empty
+                                <div class="px-4 py-6 text-center">
+                                    <p class="text-xs font-bold text-[#001BB7]/40 uppercase tracking-widest">No new notifications</p>
+                                </div>
+                            @endforelse
                             </div>
                         </div>
                     </div>

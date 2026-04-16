@@ -32,4 +32,16 @@ class NewReviewAlert extends Notification implements ShouldQueue
             ->line('**Email:** ' . $this->review->user->email)
             ->action('Manage Books', route('books.index'));
     }
+
+    public function toArray($notifiable): array
+    {
+        return [
+            'title' => 'New Review Posted',
+            'details' => [
+                'event' => $this->review->rating . ' Star Review',
+                'target' => $this->review->book->title,
+                'url' => route('books.show', $this->review->book_id, false)
+            ]
+        ];
+    }
 }

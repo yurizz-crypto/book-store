@@ -15,6 +15,7 @@ class DashboardService
     {
         return [
             'stats'         => $this->getGeneralStats(),
+            'velocity'      => $this->getSalesVelocity(), // NEW
             'userGrowth'    => $this->getUserGrowth(),
             'topBooks'      => $this->getTopBooks(),
             'topCategories' => $this->getTopCategories(),
@@ -22,6 +23,22 @@ class DashboardService
             'recentOrders'  => Order::with('user')->latest()->take(6)->get(),
             'statusSummary' => Order::select('status', DB::raw('count(*) as total'))->groupBy('status')->get(),
             'recentReviews' => Review::with(['user', 'book'])->latest()->take(4)->get(),
+        ];
+    }
+
+    private function getSalesVelocity(): array 
+    {
+        $today = Order::whereDate('created_at', now())->where('status', 'completed')->sum('total_amount');
+        $yesterday = Order::whereDate('created_at', now()->subDay())->where('status', 'completed')->sum('total_amount');
+        
+        $growth = 0;
+        if ($yesterday > 0) {
+            $growth = (($today - $yesterday) / $yesterday) * 100;
+        }
+
+        return [
+            'today' => $today,
+            'growth' => $growth
         ];
     }
 

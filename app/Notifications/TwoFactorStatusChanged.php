@@ -31,4 +31,17 @@ class TwoFactorStatusChanged extends Notification implements ShouldQueue
             ->action('View Security Settings', route('profile.edit'))
             ->line('Thank you for helping us keep PageTurner secure!');
     }
+
+    public function toArray($notifiable): array
+    {
+        $status = $this->isEnabled ? 'ENABLED' : 'DISABLED';
+        return [
+            'title' => 'Security Alert: 2FA',
+            'details' => [
+                'event' => '2FA ' . $status,
+                'target' => 'Your Account Settings',
+                'url' => route('profile.edit', [], false)
+            ]
+        ];
+    }
 }

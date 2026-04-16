@@ -12,18 +12,68 @@
 <div class="pb-10 pt-2 space-y-8">
     <div class="bg-white shadow-xl rounded-[2.5rem] border border-[#0046FF]/5 overflow-hidden p-8">
         
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <h2 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter">Recent Activity</h2>
             
-            <form action="{{ route('admin.audits.index') }}" method="GET" class="flex gap-2">
-                <select name="event" class="rounded-xl border-[#001BB7]/20 text-sm font-bold text-[#001BB7] focus:ring-[#FF8040] focus:border-[#FF8040]">
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.audits.export', array_merge(request()->all(), ['format' => 'csv'])) }}" class="inline-flex items-center gap-2 bg-white text-[#001BB7] px-4 py-2 rounded-xl border border-[#001BB7]/20 font-black uppercase tracking-widest text-[10px] hover:bg-[#001BB7] hover:text-white transition-all shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Export CSV
+                </a>
+                
+                <a href="{{ route('admin.audits.export', array_merge(request()->all(), ['format' => 'pdf'])) }}" class="inline-flex items-center gap-2 bg-white text-red-600 px-4 py-2 rounded-xl border border-red-200 font-black uppercase tracking-widest text-[10px] hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    Export PDF
+                </a>
+            </div>
+        </div>            
+
+        <form action="{{ route('admin.audits.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8 bg-[#F5F1DC]/30 p-6 rounded-[1.5rem] border border-[#001BB7]/10 shadow-sm">
+            {{-- Filter by User --}}
+            <div>
+                <label class="block text-[10px] font-black uppercase tracking-wider text-[#001BB7] mb-1.5">User</label>
+                <input type="text" name="user" value="{{ request('user') }}" placeholder="Name or Email..." class="w-full rounded-xl border-[#001BB7]/20 text-xs font-bold text-[#001BB7] focus:ring-[#FF8040] focus:border-[#FF8040] shadow-inner transition-all">
+            </div>
+
+            {{-- Filter by Event --}}
+            <div>
+                <label class="block text-[10px] font-black uppercase tracking-wider text-[#001BB7] mb-1.5">Event Type</label>
+                <select name="event" class="w-full rounded-xl border-[#001BB7]/20 text-xs font-bold text-[#001BB7] focus:ring-[#FF8040] focus:border-[#FF8040] shadow-inner transition-all">
                     <option value="">All Events</option>
                     <option value="created" {{ request('event') == 'created' ? 'selected' : '' }}>Created</option>
                     <option value="updated" {{ request('event') == 'updated' ? 'selected' : '' }}>Updated</option>
                     <option value="deleted" {{ request('event') == 'deleted' ? 'selected' : '' }}>Deleted</option>
                 </select>
-                <button type="submit" class="bg-[#001BB7] text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-[#0046FF] transition">Filter</button>
-            </form>
+            </div>
+
+            {{-- Filter by Model --}}
+            <div>
+                <label class="block text-[10px] font-black uppercase tracking-wider text-[#001BB7] mb-1.5">Model</label>
+                <select name="model" class="w-full rounded-xl border-[#001BB7]/20 text-xs font-bold text-[#001BB7] focus:ring-[#FF8040] focus:border-[#FF8040] shadow-inner transition-all">
+                    <option value="">All Models</option>
+                    <option value="Book" {{ request('model') == 'Book' ? 'selected' : '' }}>Books</option>
+                    <option value="Order" {{ request('model') == 'Order' ? 'selected' : '' }}>Orders</option>
+                    <option value="User" {{ request('model') == 'User' ? 'selected' : '' }}>Users</option>
+                </select>
+            </div>
+
+            {{-- Date Range --}}
+            <div class="sm:col-span-2 grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-[#001BB7] mb-1.5">From</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full rounded-xl border-[#001BB7]/20 text-xs font-bold text-[#001BB7] focus:ring-[#FF8040] focus:border-[#FF8040] shadow-inner transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-[#001BB7] mb-1.5">To</label>
+                    <div class="flex gap-2">
+                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full rounded-xl border-[#001BB7]/20 text-xs font-bold text-[#001BB7] focus:ring-[#FF8040] focus:border-[#FF8040] shadow-inner transition-all">
+                        <button type="submit" class="flex items-center justify-center bg-[#001BB7] text-white px-4 rounded-xl hover:bg-[#FF8040] hover:shadow-md transition-all shadow-sm" title="Search">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
         </div>
 
         <div class="overflow-x-auto">

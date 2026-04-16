@@ -1,14 +1,40 @@
 <?php
+
 use Illuminate\Support\Facades\Schedule;
 
-// 1. Run the database and file backup every night at 2:00 AM
-Schedule::command('backup:run')->dailyAt('02:00')->withoutOverlapping();
+/*
+|--------------------------------------------------------------------------
+| Automated Operations & Disaster Recovery
+|--------------------------------------------------------------------------
+*/
 
-// 2. Clean up old backups based on your retention policy every night at 3:00 AM
-Schedule::command('backup:clean')->dailyAt('03:00');
+// Daily DB Backup at 02:00 AM (Database only to save space)
+Schedule::command('backup:run --only-db')->dailyAt('02:00')->withoutOverlapping();
 
-// 3. Run our custom abandoned order cleanup script every hour
-Schedule::command('orders:cleanup-pending')->hourly();
+// Weekly Full Backup on Sundays (Database + Files)
+Schedule::command('backup:run')->sundays()->at('03:00');
 
-// 4. Clean up expired user password reset tokens daily
+// Retention & Health Monitoring
+Schedule::command('backup:clean')->dailyAt('04:00');
+Schedule::command('backup:monitor')->weeklyOn(0, '08:00');
+
+/*
+|-------------------------------------------------------------------------
+| Maintenance & Compliance
+|--------------------------------------------------------------------------
+*/
+
+// Reporting & Cleanup
+Schedule::command('report:generate-daily')->dailyAt('06:00');
+Schedule::command('session:cleanup')->daily();
 Schedule::command('auth:clear-resets')->daily();
+
+// Hourly Pending Order Cleanup
+Schedule::command('order:cleanup-pending')->hourly();
+
+// Weekly Maintenance
+Schedule::command('log:rotate')->weekly();
+Schedule::command('notification:prune')->weekly();
+
+// Monthly Compliance Archiving
+Schedule::command('audit:archive')->monthly();

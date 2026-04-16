@@ -29,13 +29,22 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $old2fa = $user->two_factor_enabled; 
+        $old2fa = $user->two_factor_enabled;
 
-        $user->fill($request->validated());
-        
-        $user->two_factor_enabled = $request->has('two_factor_enabled');
+        // Fill validated data (first_name, middle_name, last_name, email)
+        $user->fill($request->safe()->except('two_factor_enabled'));
+
+        // Handle 2FA toggle separately
+        $user->two_factor_enabled = $request->boolean('two_factor_enabled');
+
+        // Check if email changed to reset verification
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
         $user->save();
 
+        // Notify if 2FA status changed
         if ($old2fa !== $user->two_factor_enabled) {
             $user->notify(new TwoFactorStatusChanged($user->two_factor_enabled));
 
@@ -48,7 +57,10 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    public function updateAddress(Request $request)
+    /**
+     * Update the user's address.
+     */
+    public function updateAddress(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'street_address' => ['required', 'string', 'max:255'],

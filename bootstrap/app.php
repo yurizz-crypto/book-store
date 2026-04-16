@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             'throttle:global',
         ]);
+
+        $middleware->redirectTo(
+            guests: '/login', 
+            users: '/dashboard'
+        );
         
     })
     ->withExceptions(function (Exceptions $exceptions) {

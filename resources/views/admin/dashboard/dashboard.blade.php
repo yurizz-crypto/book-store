@@ -31,35 +31,125 @@
         @endforeach
     </div>
 
-    <div class="bg-gradient-to-r from-white to-[#F5F1DC]/30 p-8 rounded-[2.5rem] border border-[#0046FF]/5 shadow-xl flex flex-col lg:flex-row justify-between items-center gap-6">
-        <div class="flex-1">
-            <h2 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter">Data Management</h2>
-            <p class="text-xs font-bold text-[#0046FF]/60 tracking-wide mt-1">Import and export system records for compliance and offline analysis.</p>
+    @include('admin.dashboard.partials._intellegence-widgets')
+
+    <div class="mt-12 space-y-6">
+        <div class="flex items-center justify-between px-2">
+            <h2 class="text-2xl font-black text-[#001BB7] uppercase tracking-tighter">System & Data Operations</h2>
         </div>
-        
-        <div class="flex flex-col sm:flex-row items-center gap-4">
-            <form action="{{ route('admin.import.books') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2 bg-white p-2 rounded-2xl border border-[#0046FF]/10 shadow-sm">
-                @csrf
-                <input type="file" name="import_file" accept=".xlsx,.csv" required class="text-xs font-bold text-[#001BB7] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
-                <button type="submit" class="bg-[#001BB7] text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all active:scale-95">
-                    Import
-                </button>
-            </form>
 
-            <span class="text-[#001BB7]/20 font-black">|</span>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            
+            {{-- Card 1: Book Data & Backups --}}
+            <div class="bg-white rounded-[2.5rem] border border-[#0046FF]/10 shadow-xl shadow-[#0046FF]/5 overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:shadow-[#0046FF]/10">
+                <div class="p-8 bg-gradient-to-br from-white to-[#F5F1DC]/40 border-b border-[#0046FF]/5">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 bg-[#001BB7] text-white rounded-2xl shadow-md">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-[#001BB7] uppercase tracking-tight">Book Data & Backups</h3>
+                            <p class="text-xs font-bold text-[#0046FF]/60">Manage catalog records and system snapshots.</p>
+                        </div>
+                    </div>
+                </div>
 
-            <div>
-                <button type="button" onclick="document.getElementById('exportModal').classList.remove('hidden')" class="inline-flex items-center gap-2 bg-emerald-500 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/30 active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                    </svg>
-                    Export Data
-                </button>
-                
-                <a href="{{ route('admin.import.template') }}" class="text-[#001BB7]/60 hover:text-[#001BB7] text-[10px] font-black uppercase tracking-widest underline transition-all ml-2 block text-center mt-2">
-                    Get Template
-                </a>
+                <div class="p-8 space-y-8 flex-1 bg-white">
+                    {{-- Book Import --}}
+                    <div>
+                        <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Import Catalog</label>
+                        <form action="{{ route('admin.import.books') }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                            @csrf
+                            <input type="file" name="import_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
+                            <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 whitespace-nowrap">
+                                Upload
+                            </button>
+                        </form>
+                    </div>
+
+                    <hr class="border-gray-100">
+
+                    {{-- Book Export & System Backup --}}
+                    <div class="flex flex-wrap items-end justify-between gap-6">
+                        <div>
+                            <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Export Records</label>
+                            <div class="flex items-center gap-4">
+                                <button type="button" onclick="document.getElementById('exportModal').classList.remove('hidden')" class="inline-flex items-center gap-2 bg-emerald-500 text-white px-6 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/20 active:scale-95">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    Export Data
+                                </button>
+                                <a href="{{ route('admin.import.template') }}" class="text-gray-400 hover:text-[#001BB7] text-[10px] font-black uppercase tracking-widest underline transition-all">
+                                    Get Template
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">System Health</label>
+                            <form action="{{ route('admin.backup.run') }}" method="POST" onsubmit="return confirm('This will pause system performance for a moment. Run full backup now?');">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-md active:scale-95">
+                                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    Run Backup
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            {{-- Card 2: Corporate Users --}}
+            <div class="bg-white rounded-[2.5rem] border border-[#0046FF]/10 shadow-xl shadow-[#0046FF]/5 overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:shadow-[#0046FF]/10">
+                <div class="p-8 bg-gradient-to-br from-white to-blue-50/50 border-b border-[#0046FF]/5">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 bg-[#0046FF] text-white rounded-2xl shadow-md">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-[#001BB7] uppercase tracking-tight">Corporate Users</h3>
+                            <p class="text-xs font-bold text-[#0046FF]/60">Bulk create institutional accounts (GDPR Ready).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 space-y-8 flex-1 bg-white">
+                    {{-- User Import --}}
+                    <div>
+                        <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Bulk User Import</label>
+                        <form action="{{ route('admin.import.users') }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                            @csrf
+                            <input type="file" name="users_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
+                            <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 whitespace-nowrap">
+                                Upload
+                            </button>
+                        </form>
+                    </div>
+
+                    <hr class="border-gray-100">
+
+                    {{-- User Export & GDPR --}}
+                    <div>
+                        <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Compliance & Export</label>
+                        <form action="{{ route('admin.export.users') }}" method="GET" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <label class="flex items-center gap-3 cursor-pointer group flex-1">
+                                <div class="relative flex items-center">
+                                    <input type="checkbox" name="redact_pii" value="1" checked class="w-5 h-5 rounded text-emerald-500 focus:ring-emerald-500 border-gray-300 shadow-sm cursor-pointer transition-all">
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] font-black uppercase tracking-[0.1em] text-gray-700 group-hover:text-emerald-600 transition-colors">GDPR PII Redaction</span>
+                                    <span class="block text-[9px] font-bold text-gray-400 mt-0.5">Masks emails and names in export.</span>
+                                </div>
+                            </label>
+                            
+                            <button type="submit" class="inline-flex justify-center items-center gap-2 bg-emerald-500 text-white px-6 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/20 active:scale-95 whitespace-nowrap">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Export Users
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
     
@@ -118,7 +208,7 @@
             </div>
             <div class="space-y-4">
                 @foreach($recentOrders as $order)
-                <a href="{{ route('orders.show', $order) }}" class="block group">
+                <a href="{{ route('admin.orders.index', $order) }}" class="block group">
                     <div class="flex items-center justify-between p-5 bg-[#F5F1DC]/30 rounded-2xl border border-transparent group-hover:border-[#0046FF]/10 group-hover:scale-[1.02] transition-all duration-300">
                         <div>
                             <p class="font-black text-[#001BB7] text-sm">{{ $order->user->first_name }} {{ $order->user->last_name }}</p>

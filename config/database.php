@@ -106,8 +106,8 @@ return [
 
             'dump' => [
                 'dump_binary_path' => 'C:\Program Files\PostgreSQL\17\bin',
-                'use_column_inserts' => true,
-            ]
+                'use_single_transaction' => true,
+                'timeout' => 300,            ]
         ],
 
         'sqlsrv' => [

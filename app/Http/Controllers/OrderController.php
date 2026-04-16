@@ -103,21 +103,13 @@ class OrderController extends Controller
 
             $admins = User::where('role', 'admin')->get();
             
-            // Existing Email Notification
-            Notification::send($admins, new NewOrderReceived($order));
 
-            Notification::send($admins, new UserActionNotification('New Order Received', [
-                'order_id' => $order->id,
-                'total' => $order->total_amount,
-                // Direct them to the admin orders page
-                'url' => route('admin.orders.index', ['status' => 'pending']) 
-            ]));
+            $order->user->notify(new OrderStatusUpdated($order));
 
-            $order->user->notify(new UserActionNotification('order_status_updated', [
+            Notification::send($admins, new UserActionNotification('Order Status Changed', [
                 'order_id' => $order->id,
                 'new_status' => $request->status,
-                // Direct them to their specific order details
-                'url' => route('orders.show', $order->id) 
+                'url' => route('admin.orders.index', [], false)
             ]));
 
             return redirect()->route('orders.index', ['status' => 'pending'])

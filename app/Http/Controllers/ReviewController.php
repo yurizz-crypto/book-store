@@ -48,13 +48,6 @@ class ReviewController extends Controller
         $admins = User::where('role', 'admin')->get();
         Notification::send($admins, new NewReviewAlert($review));
 
-        Notification::send($admins, new UserActionNotification('Product Review', [
-            'book_title' => $book->title,
-            'rating' => $validated['rating'],
-            'reviewer' => Auth::user()->first_name,
-            'url' => route('books.show', $book->id) 
-        ]));
-
         return redirect()->route('books.show', $book)
             ->with('success', 'Review processed successfully!');
     }

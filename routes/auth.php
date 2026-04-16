@@ -34,25 +34,25 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+});
 
+Route::middleware('auth')->group(function () {
     Route::get('two-factor', [TwoFactorController::class, 'index'])
         ->name('2fa.index');
 
     Route::post('two-factor', [TwoFactorController::class, 'store'])
-        ->middleware('throttle:6,1') // Apply rate limiting 
+        ->middleware('throttle:10,1') 
         ->name('2fa.verify');
-});
 
-Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
     Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
+        ->middleware(['signed', 'throttle:10,1'])
         ->name('verification.verify');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
+        ->middleware('throttle:10,1')
         ->name('verification.send');
 
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])

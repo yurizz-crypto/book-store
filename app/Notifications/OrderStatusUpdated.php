@@ -31,4 +31,16 @@ class OrderStatusUpdated extends Notification implements ShouldQueue
                 'user'  => $notifiable,
             ]);
     }
+
+    public function toArray($notifiable): array
+    {
+        return [
+            'title' => 'Order Update: #' . $this->order->id,
+            'details' => [
+                'event' => 'Status changed to: ' . strtoupper($this->order->status),
+                'target' => 'Order #' . $this->order->id,
+                'url' => route('orders.index', [], false)
+            ]
+        ];
+    }
 }

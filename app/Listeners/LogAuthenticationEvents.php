@@ -6,6 +6,9 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\Failed;
 use OwenIt\Auditing\Models\Audit;
+use App\Models\User;
+use App\Notifications\CriticalSecurityAlert;
+use Illuminate\Support\Facades\Notification;
 
 class LogAuthenticationEvents
 {
@@ -17,6 +20,18 @@ class LogAuthenticationEvents
             $event instanceof Failed => 'failed_login',
             default => 'unknown',
         };
+
+        if ($event instanceof Failed) {
+            $admins = User::where('role', 'admin')->get();
+            
+            $details = [
+                'event' => 'Failed Login Attempt',
+                'target' => $event->credentials['email'] ?? 'Unknown',
+                'ip' => request()->ip(),
+            ];
+
+            Notification::send($admins, new CriticalSecurityAlert($details));
+        }
 
         $user = $event->user;
 

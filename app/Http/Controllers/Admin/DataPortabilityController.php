@@ -60,4 +60,56 @@ class DataPortabilityController extends Controller
             "Expires"             => "0"
         ]);
     }
+
+    // Admin Order Export
+    public function exportOrders(Request $request)
+    {
+        $filters = $request->only(['status', 'date_from', 'date_to', 'user_id']);
+        $format = $request->input('format', 'xlsx');
+        $filename = 'pageturner_orders_' . now()->format('Y-m-d');
+
+        if ($format === 'csv') {
+            return Excel::download(new \App\Exports\OrdersExport($filters), $filename . '.csv', \Maatwebsite\Excel\Excel::CSV);
+        }
+        return Excel::download(new \App\Exports\OrdersExport($filters), $filename . '.xlsx');
+    }
+
+    // Financial Report Export
+    public function exportFinancials(Request $request)
+    {
+        $dateFrom = $request->input('date_from') ? \Carbon\Carbon::parse($request->input('date_from')) : null;
+        $dateTo = $request->input('date_to') ? \Carbon\Carbon::parse($request->input('date_to')) : null;
+        
+        return Excel::download(new \App\Exports\FinancialExport($dateFrom, $dateTo), 'financial_report_' . now()->format('F_Y') . '.xlsx');
+    }
+
+    // Manual Backup Trigger
+    public function triggerBackup()
+    {
+        \Illuminate\Support\Facades\Artisan::call('backup:run');
+        
+        return back()->with('success', 'Manual backup completed successfully!');
+    }
+
+    // Export Users (with GDPR Check)
+    public function exportUsers(Request $request)
+    {
+        // Check if the admin checked the "Redact PII" box
+        $redactPII = $request->has('redact_pii'); 
+        $filename = 'pageturner_users_' . now()->format('Y-m-d') . '.xlsx';
+        
+        return Excel::download(new \App\Exports\UsersExport($redactPII), $filename);
+    }
+
+    // Import Corporate Users
+    public function importUsers(Request $request)
+    {
+        $request->validate([
+            'users_file' => 'required|mimes:xlsx,csv|max:10240',
+        ]);
+
+        Excel::import(new \App\Imports\UsersImport, $request->file('users_file'));
+
+        return back()->with('success', 'Corporate users successfully imported and roles assigned!');
+    }
 }

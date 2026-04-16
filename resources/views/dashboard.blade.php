@@ -80,17 +80,29 @@
                 <h3 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-6">Recent Orders</h3>
                 <div class="space-y-4">
                     @forelse($recentOrders as $order)
-                        <a href="{{ route('orders.show', $order) }}" class="block group">
-                            <div class="flex items-center justify-between p-4 bg-[#F5F1DC]/30 rounded-2xl border border-transparent group-hover:border-[#0046FF]/10 group-hover:scale-[1.02] transition-all duration-300 shadow-sm group-hover:shadow-md">
-                                <div>
-                                    <p class="font-black text-[#001BB7] text-sm group-hover:text-[#0046FF] transition-colors">Order #{{ $order->id }}</p>
-                                    <p class="text-[10px] font-bold text-[#0046FF]/60 uppercase tracking-widest">{{ $order->created_at->format('M d, Y') }}</p>
+                        <div class="flex items-center gap-3">
+                            {{-- View Order Details Link --}}
+                            <a href="{{ route('orders.show', $order) }}" class="flex-1 block group">
+                                <div class="flex items-center justify-between p-4 bg-[#F5F1DC]/30 rounded-2xl border border-transparent group-hover:border-[#0046FF]/10 group-hover:scale-[1.02] transition-all duration-300 shadow-sm group-hover:shadow-md">
+                                    <div>
+                                        <p class="font-black text-[#001BB7] text-sm group-hover:text-[#0046FF] transition-colors">Order #{{ $order->id }}</p>
+                                        <p class="text-[10px] font-bold text-[#0046FF]/60 uppercase tracking-widest">{{ $order->created_at->format('M d, Y') }}</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-white rounded-lg text-[9px] font-black uppercase tracking-widest text-[#001BB7] border border-[#001BB7]/10 group-hover:border-[#FF8040] group-hover:text-[#FF8040] transition-all">
+                                        {{ $order->status }}
+                                    </span>
                                 </div>
-                                <span class="px-3 py-1 bg-white rounded-lg text-[9px] font-black uppercase tracking-widest text-[#001BB7] border border-[#001BB7]/10 group-hover:border-[#FF8040] group-hover:text-[#FF8040] transition-all">
-                                    {{ $order->status }}
-                                </span>
-                            </div>
-                        </a>
+                            </a>
+
+                            {{--  Download PDF Invoice Button --}}
+                            <a href="{{ route('orders.invoice', $order) }}" 
+                               class="flex items-center justify-center w-14 h-14 bg-white rounded-2xl border border-[#0046FF]/10 shadow-sm hover:bg-[#001BB7] hover:border-[#001BB7] text-[#001BB7] hover:text-white transition-all duration-300 group"
+                               title="Download PDF Invoice">
+                                <svg class="w-6 h-6 transform group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </a>
+                        </div>
                     @empty
                         <p class="text-sm font-bold text-[#001BB7]/40 italic">No orders yet.</p>
                     @endforelse
@@ -149,5 +161,18 @@
                 @endforelse
             </div>
         </div>
-    </div>
+
+        <div class="p-6 bg-white border border-[#001BB7]/10 rounded-[2rem] shadow-sm flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-black text-[#001BB7] uppercase tracking-tighter">Data Portability</h3>
+                <p class="text-sm text-gray-500 font-medium mt-1">Download a copy of your personal data, purchase history, and reviews in JSON format (GDPR Compliant).</p>
+            </div>
+            <a href="{{ route('dashboard.export-data') }}" class="inline-flex items-center gap-2 bg-[#001BB7] text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-[#0046FF] transition-colors shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Export My Data
+            </a>
+        </div>
+        </div>
 @endsection

@@ -32,4 +32,16 @@ class NewOrderReceived extends Notification implements ShouldQueue
                 'url' => route('admin.orders.index'),
             ]);
     }
+
+    public function toArray($notifiable): array
+    {
+        return [
+            'title' => 'New Order Received',
+            'details' => [
+                'event' => 'Order #' . $this->order->id,
+                'target' => 'Customer: ' . $this->order->user->first_name,
+                'url' => route('admin.orders.index', [], false)
+            ]
+        ];
+    }
 }

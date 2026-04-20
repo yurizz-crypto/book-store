@@ -112,11 +112,13 @@ class OrderController extends Controller
                 'url' => route('admin.orders.index', [], false)
             ]));
 
+            event(new \App\Events\OrderPlaced($order));
+
             return redirect()->route('orders.index', ['status' => 'pending'])
                 ->with('success', 'Order placed successfully!');
         });
     }
-
+    
     public function update(Request $request, Order $order)
     {
         $oldStatus = $order->status;
@@ -127,24 +129,16 @@ class OrderController extends Controller
                 foreach ($order->orderItems as $item) {
                     $item->book->increment('stock_quantity', $item->quantity);
                 }
-                $order->update(['status' => 'cancelled']);
+                // NOTE: This update will now automatically trigger the Observer 
+                // and notify the customer that their order was cancelled!
+                $order->update(['status' => 'cancelled']); 
             });
             return back()->with('success', 'Order cancelled and stock restored.');
         }
 
         if (Auth::user()->isAdmin()) {
+            // This single line triggers the Observer to send both the email and in-app alert
             $order->update(['status' => $request->status]);
-
-            $order->load(['orderItems.book', 'user.addresses']); 
-
-            // Existing Email Notification
-            $order->user->notify(new OrderStatusUpdated($order));
-
-            // NEW: In-System Notification for Customer
-            $order->user->notify(new UserActionNotification('Order Status Updated', [
-                'order_id' => $order->id,
-                'new_status' => $request->status
-            ]));
 
             return back()->with('success', 'Status updated and customer notified.');
         }

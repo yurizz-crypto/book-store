@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Book;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Category;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Maatwebsite\Excel\Concerns\ToModel;
@@ -27,14 +28,20 @@ class BooksImport implements
     use SkipsFailures;
 
     private $categories;
+    private $importedCount = 0;
 
     public function __construct()
     {
         $this->categories = Category::pluck('id', 'name')->toArray();
+        if (empty($this->categories)) {
+            throw new \Exception('No categories found in database');
+        }
     }
 
     public function model(array $row)
     {
+        $this->importedCount++;
+        
         $categoryId = $this->categories[$row['category']] ?? Category::first()->id;
 
         return new Book([
@@ -46,6 +53,14 @@ class BooksImport implements
             'category_id'    => $categoryId,
             'description'    => $row['description'] ?? 'Imported via Bulk Upload',
         ]);
+    }
+
+    public function __destruct()
+    {
+        if ($this->importedCount > 0) {
+            Cache::forget('featured_homepage_books');
+            Cache::forget('homepage_categories');
+        }
     }
 
     public function uniqueBy()

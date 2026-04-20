@@ -58,17 +58,28 @@
             @php $firstItem = $order->orderItems->first(); @endphp
             <div class="bg-white rounded-[2rem] shadow-sm border border-[#0046FF]/10 p-6 flex flex-col md:flex-row justify-between items-center gap-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-6 w-full md:w-auto">
-                    <a href="{{ route('books.show', $firstItem->book) }}" class="flex-shrink-0 group">
-                        <div class="h-24 w-16 bg-[#F5F1DC] rounded-xl overflow-hidden shadow-inner border border-[#0046FF]/5">
-                            @if($firstItem->book->cover_image)
-                                <img src="{{ asset('storage/' . $firstItem->book->cover_image) }}" class="h-full w-full object-cover group-hover:scale-110 transition duration-500">
-                            @else
-                                <div class="flex items-center justify-center h-full">
-                                    <svg class="w-8 h-8 text-[#0046FF]/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                                </div>
-                            @endif
+                    
+                    {{-- Safely check if the item and book exist --}}
+                    @if($firstItem && $firstItem->book)
+                        <a href="{{ route('books.show', $firstItem->book) }}" class="flex-shrink-0 group">
+                            <div class="h-24 w-16 bg-[#F5F1DC] rounded-xl overflow-hidden shadow-inner border border-[#0046FF]/5">
+                                @if($firstItem->book->cover_image)
+                                    <img src="{{ asset('storage/' . $firstItem->book->cover_image) }}" class="h-full w-full object-cover group-hover:scale-110 transition duration-500">
+                                @else
+                                    <div class="flex items-center justify-center h-full">
+                                        <svg class="w-8 h-8 text-[#0046FF]/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                                    </div>
+                                @endif
+                            </div>
+                        </a>
+                    @else
+                        {{-- Fallback UI for empty orders --}}
+                        <div class="flex-shrink-0">
+                            <div class="h-24 w-16 bg-[#F5F1DC]/50 rounded-xl flex items-center justify-center border border-[#0046FF]/5">
+                                <svg class="w-8 h-8 text-[#0046FF]/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                            </div>
                         </div>
-                    </a>
+                    @endif
 
                     <div>
                         <div class="flex items-center gap-2">
@@ -78,9 +89,17 @@
                             @endif
                         </div>
                         <p class="text-xs text-[#0046FF]/60 font-bold uppercase tracking-widest">{{ $order->created_at->format('M d, Y') }} • ₱{{ number_format($order->total_amount, 2) }}</p>
-                        <p class="text-sm font-black text-[#FF8040] uppercase tracking-tighter mt-1">
-                            {{ $firstItem->book->title }} @if($order->orderItems->count() > 1) <span class="text-[#001BB7]/40 text-xs">+{{ $order->orderItems->count() - 1 }} more</span> @endif
-                        </p>
+                        
+                        {{-- Safely check for title and extra items --}}
+                        @if($firstItem && $firstItem->book)
+                            <p class="text-sm font-black text-[#FF8040] uppercase tracking-tighter mt-1">
+                                {{ $firstItem->book->title }} @if($order->orderItems->count() > 1) <span class="text-[#001BB7]/40 text-xs">+{{ $order->orderItems->count() - 1 }} more</span> @endif
+                            </p>
+                        @else
+                            <p class="text-sm font-black text-[#FF8040]/50 uppercase tracking-tighter mt-1">
+                                No items attached
+                            </p>
+                        @endif
                     </div>
                 </div>
 

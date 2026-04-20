@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
+use App\Observers\OrderObserver;
+use App\Models\Order;
 use Spatie\Backup\Events\BackupWasSuccessful;
 use Spatie\Backup\Events\BackupHasFailed;   
 
@@ -30,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Order::observe(OrderObserver::class);
+
         // 1. AUDIT LOGGING: Listen for Authentication Events
         Event::listen(Login::class, [LogAuthenticationEvents::class, 'handle']);
         Event::listen(Logout::class, [LogAuthenticationEvents::class, 'handle']);

@@ -50,7 +50,12 @@ class TwoFactorCode extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'title' => '2FA Login Code',
+            'details' => [
+                'event' => 'New login attempt detected',
+                'target' => 'Your Account',
+                'url' => '#' // Or route to your 2FA verification page
+            ]
         ];
     }
 }

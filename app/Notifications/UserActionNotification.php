@@ -31,13 +31,13 @@ class UserActionNotification extends Notification implements ShouldQueue
         if ($notifiable instanceof User) {
             if ($notifiable->role === 'admin') {
                 return [
-                    'message' => 'System Alert: ' . $this->action, 
+                    'title' => 'System Alert: ' . $this->action, 
                     'details' => $this->data,
                     'type' => 'admin_alert',
                 ];
             } elseif ($notifiable->role === 'customer') {
                 return [
-                    'message' => 'Notification: ' . $this->action, 
+                    'title' => 'Notification: ' . $this->action, 
                     'details' => $this->data,
                     'type' => 'customer_notification',
                 ];
@@ -45,7 +45,7 @@ class UserActionNotification extends Notification implements ShouldQueue
         }
 
         return [
-            'message' => 'General Notification: ' . $this->action,
+            'title' => 'General Notification: ' . $this->action,
             'details' => $this->data,
             'type' => 'general',
         ];

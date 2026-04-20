@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class CleanupSessions extends Command
 {
@@ -25,11 +27,18 @@ class CleanupSessions extends Command
      */
     public function handle()
     {
-        // If using database sessions, delete sessions inactive for > 24 hours
-        \Illuminate\Support\Facades\DB::table('sessions')
-            ->where('last_activity', '<', now()->subDays(1)->getTimestamp())
-            ->delete();
+        // Safety Check: Only query the DB if the table AND column actually exist
+        if (Schema::hasTable('sessions') && Schema::hasColumn('sessions', 'last_activity')) {
             
-        $this->info('Old sessions cleaned up successfully.');
+            DB::table('sessions')
+                ->where('last_activity', '<', now()->subDays(1)->getTimestamp())
+                ->delete();
+                
+            $this->info('Old database sessions cleaned up successfully.');
+            
+        } else {
+            // Safely skip without crashing if using file sessions
+            $this->info('System is using file sessions. Database cleanup skipped.');
+        }
     }
 }

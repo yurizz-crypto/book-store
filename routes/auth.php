@@ -34,16 +34,16 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
-});
 
-Route::middleware('auth')->group(function () {
     Route::get('two-factor', [TwoFactorController::class, 'index'])
         ->name('2fa.index');
 
     Route::post('two-factor', [TwoFactorController::class, 'store'])
         ->middleware('throttle:10,1') 
         ->name('2fa.verify');
+});
 
+Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

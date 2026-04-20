@@ -82,6 +82,7 @@
                     <tr class="bg-[#F5F1DC]/50 text-[#001BB7] text-[10px] uppercase tracking-widest font-black">
                         <th class="p-4 rounded-tl-2xl">Date</th>
                         <th class="p-4">User</th>
+                        <th class="p-4">IP & Device</th>
                         <th class="p-4">Action</th>
                         <th class="p-4">Target Model</th>
                         <th class="p-4 rounded-tr-2xl">Changes (Old &rarr; New)</th>
@@ -96,6 +97,16 @@
                             <td class="p-4 font-bold text-[#001BB7]">
                                 {{ $audit->user ? $audit->user->first_name . ' ' . $audit->user->last_name : 'System/Guest' }}
                             </td>
+
+                            <td class="p-4">
+                                <div class="text-xs font-mono font-bold text-[#0046FF]">
+                                    {{ $audit->ip_address ?? 'Unknown IP' }}
+                                </div>
+                                <div class="text-[10px] text-gray-500 mt-1 max-w-[150px] truncate cursor-help" title="{{ $audit->user_agent }}">
+                                    {{ $audit->user_agent ?? 'Unknown Device' }}
+                                </div>
+                            </td>
+
                             <td class="p-4">
                                 <span class="px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest
                                     {{ $audit->event === 'created' ? 'bg-emerald-100 text-emerald-700' : '' }}
@@ -130,8 +141,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="p-8 text-center text-[#001BB7]/50 font-bold italic">No audit logs found.</td>
-                        </tr>
+                        <td colspan="6" class="p-8 text-center text-[#001BB7]/50 font-bold italic">No audit logs found.</td>                        </tr>
                     @endforelse
                 </tbody>
             </table>

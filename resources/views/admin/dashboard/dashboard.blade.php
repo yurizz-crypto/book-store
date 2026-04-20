@@ -13,6 +13,9 @@
 
 @section('content')
 <div class="pb-10 pt-2 space-y-8">
+
+    @include('admin.dashboard.partials._intellegence-widgets')
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         @foreach([
             ['Add Book', 'admin.books.create', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
@@ -30,8 +33,6 @@
         </a>
         @endforeach
     </div>
-
-    @include('admin.dashboard.partials._intellegence-widgets')
 
     <div class="mt-12 space-y-6">
         <div class="flex items-center justify-between px-2">
@@ -60,6 +61,13 @@
                         <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Import Catalog</label>
                         <form action="{{ route('admin.import.books') }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
                             @csrf
+                                                        
+                            @if ($errors->has('import_file'))
+                                <div class="text-red-500 text-xs font-bold mt-2">
+                                    {{ $errors->first('import_file') }}
+                                </div>
+                            @endif
+                            
                             <input type="file" name="import_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
                             <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 whitespace-nowrap">
                                 Upload
@@ -97,8 +105,7 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Card 2: Corporate Users --}}
+            
             <div class="bg-white rounded-[2.5rem] border border-[#0046FF]/10 shadow-xl shadow-[#0046FF]/5 overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:shadow-[#0046FF]/10">
                 <div class="p-8 bg-gradient-to-br from-white to-blue-50/50 border-b border-[#0046FF]/5">
                     <div class="flex items-center gap-4">
@@ -116,12 +123,21 @@
                     {{-- User Import --}}
                     <div>
                         <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Bulk User Import</label>
-                        <form action="{{ route('admin.import.users') }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                        <form action="{{ route('admin.import.users') }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-3">
                             @csrf
-                            <input type="file" name="users_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
-                            <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 whitespace-nowrap">
-                                Upload
-                            </button>
+                            
+                            {{-- NEW: Role Selector Dropdown --}}
+                            <select name="default_role" class="w-full text-xs font-bold text-[#001BB7] bg-[#001BB7]/5 border-none rounded-xl focus:ring-0 cursor-pointer py-3 px-4">
+                                <option value="customer">Import as Customers</option>
+                                <option value="admin">Import as Admins</option>
+                            </select>
+
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <input type="file" name="users_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
+                                <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 whitespace-nowrap">
+                                    Upload
+                                </button>
+                            </div>
                         </form>
                     </div>
 
@@ -223,21 +239,33 @@
 
         <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
             <h2 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-8">Recent Feedback</h2>
-            <div class="space-y-4">
-                @foreach($recentReviews as $review)
-                <a href="{{ route('books.show', $review->book) }}" class="block group">
-                    <div class="p-6 bg-[#F5F1DC]/30 rounded-2xl border border-transparent group-hover:border-[#0046FF]/10 group-hover:scale-[1.02] transition-all duration-300 flex items-start gap-4">
-                        <div class="w-10 h-10 bg-[#001BB7] rounded-xl flex items-center justify-center text-[#F5F1DC] font-black text-xs shrink-0 shadow-sm">
-                            {{ substr($review->user->first_name, 0, 1) }}
+            
+            @if($recentReviews->count() > 0)
+                <div class="space-y-4">
+                    @foreach($recentReviews as $review)
+                    <a href="{{ route('books.show', $review->book) }}" class="block group">
+                        <div class="p-6 bg-[#F5F1DC]/30 rounded-2xl border border-transparent group-hover:border-[#0046FF]/10 group-hover:scale-[1.02] transition-all duration-300 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-[#001BB7] rounded-xl flex items-center justify-center text-[#F5F1DC] font-black text-xs shrink-0 shadow-sm">
+                                {{ substr($review->user->first_name, 0, 1) }}
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black uppercase text-[#001BB7] mb-1 group-hover:text-[#FF8040] transition-colors">{{ $review->user->first_name }} on {{ $review->book->title }}</p>
+                                <p class="text-sm italic text-[#001BB7]/70 font-bold line-clamp-1">"{{ $review->comment }}"</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-[10px] font-black uppercase text-[#001BB7] mb-1 group-hover:text-[#FF8040] transition-colors">{{ $review->user->first_name }} on {{ $review->book->title }}</p>
-                            <p class="text-sm italic text-[#001BB7]/70 font-bold line-clamp-1">"{{ $review->comment }}"</p>
-                        </div>
+                    </a>
+                    @endforeach
+                </div>
+            @else
+                <div class="flex flex-col items-center justify-center py-16 px-6 bg-[#F5F1DC]/20 rounded-2xl border border-dashed border-[#001BB7]/10">
+                    <div class="w-16 h-16 bg-[#001BB7]/5 rounded-2xl flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-[#001BB7]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
                     </div>
-                </a>
-                @endforeach
-            </div>
+                    <p class="text-sm font-black text-[#001BB7]/60 uppercase tracking-tight mb-1">No reviews yet.</p>
+                </div>
+            @endif
         </div>
     </div>
 </div>

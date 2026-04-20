@@ -105,7 +105,7 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
 
             'dump' => [
-                'dump_binary_path' => 'C:\Program Files\PostgreSQL\17\bin',
+                'dump_binary_path' => env('PG_DUMP_PATH', ''),
                 'use_single_transaction' => true,
                 'timeout' => 300,            ]
         ],

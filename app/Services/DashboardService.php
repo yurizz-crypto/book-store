@@ -34,11 +34,14 @@ class DashboardService
         $growth = 0;
         if ($yesterday > 0) {
             $growth = (($today - $yesterday) / $yesterday) * 100;
+        } else {
+            $growth = $today > 0 ? 100 : 0;
         }
 
         return [
             'today' => $today,
-            'growth' => $growth
+            'growth_percentage' => round($growth, 1),
+            'trend' => $growth >= 0 ? 'up' : 'down'
         ];
     }
 

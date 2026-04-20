@@ -13,30 +13,38 @@ class DataPortabilityController extends Controller
 {
     public function exportBooks(Request $request)
     {
+        ini_set('memory_limit', '-1');
+        set_time_limit(300); 
+
         $filters = $request->only(['category_id', 'stock_status', 'price_min', 'price_max', 'date_from', 'date_to']);
-        
         $columns = $request->input('columns', []);
-        
         $format = $request->input('format', 'xlsx');
         
-        $filename = 'pageturner_books_' . now()->format('Y-m-d_H-i');
+        $filename = 'pageturner_books_' . now()->format('Y-m-d_H-i-s') . '.' . $format;
         
-        if ($format === 'csv') {
-            return Excel::download(new BooksExport($filters, $columns), $filename . '.csv', \Maatwebsite\Excel\Excel::CSV);
-        } elseif ($format === 'pdf') {
-            return Excel::download(new BooksExport($filters, $columns), $filename . '.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
-        }
-        
-        return Excel::download(new BooksExport($filters, $columns), $filename . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+        $writerType = match($format) {
+            'csv' => \Maatwebsite\Excel\Excel::CSV,
+            'pdf' => \Maatwebsite\Excel\Excel::DOMPDF,
+            default => \Maatwebsite\Excel\Excel::XLSX,
+        };
+
+        return (new BooksExport($filters, $columns))->download($filename, $writerType);
     }
 
     public function importBooks(Request $request)
     {
-        $request->validate([
-            'import_file' => 'required|mimes:xlsx,csv|max:10240',
+
+        \Log::info('Import request received', [
+        'has_file' => $request->hasFile('import_file'),
+        'file_valid' => $request->file('import_file')?->isValid(),
+        'error' => $request->file('import_file')?->getError(),
         ]);
 
-        Excel::import(new BooksImport, $request->file('import_file'));
+        $request->validate([
+            'import_file' => 'required|mimes:xlsx,csv|max:20480',
+        ]);
+
+        Excel::queueImport(new BooksImport, $request->file('import_file'));
 
         return back()->with('success', 'Book import has been queued! It will process in the background.');
     }
@@ -86,9 +94,10 @@ class DataPortabilityController extends Controller
     // Manual Backup Trigger
     public function triggerBackup()
     {
-        \Illuminate\Support\Facades\Artisan::call('backup:run');
+        // Use queue() instead of call() so the user isn't stuck waiting
+        \Illuminate\Support\Facades\Artisan::queue('backup:run');
         
-        return back()->with('success', 'Manual backup completed successfully!');
+        return back()->with('success', 'Backup has been started in the background! You will receive an email when it completes.');
     }
 
     // Export Users (with GDPR Check)
@@ -106,10 +115,11 @@ class DataPortabilityController extends Controller
     {
         $request->validate([
             'users_file' => 'required|mimes:xlsx,csv|max:10240',
+            'default_role' => 'required|in:admin,customer'
         ]);
 
-        Excel::import(new \App\Imports\UsersImport, $request->file('users_file'));
+        Excel::queueImport(new \App\Imports\UsersImport($request->default_role), $request->file('users_file'));
 
-        return back()->with('success', 'Corporate users successfully imported and roles assigned!');
+        return back()->with('success', 'Corporate users queued for import!');
     }
 }

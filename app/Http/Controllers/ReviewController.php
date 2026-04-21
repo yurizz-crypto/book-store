@@ -4,13 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Review;
-use App\Models\User;
-use App\Notifications\NewReviewAlert;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use App\Notifications\UserActionNotification;
 
 class ReviewController extends Controller
 {
@@ -45,8 +41,7 @@ class ReviewController extends Controller
             ]
         );
 
-        $admins = User::where('role', 'admin')->get();
-        Notification::send($admins, new NewReviewAlert($review));
+        event(new \App\Events\ReviewSubmitted($review));
 
         return redirect()->route('books.show', $book)
             ->with('success', 'Review processed successfully!');

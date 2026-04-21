@@ -47,6 +47,11 @@ class NewPasswordController extends Controller
                     'remember_token' => Str::random(60),
                 ])->save();
 
+                // NEW: Send a security alert for the reset
+                $user->notify(new \App\Notifications\UserActionNotification('Security Alert', [
+                    'alert' => 'Your account password was successfully reset using the recovery link.'
+                ]));
+
                 event(new PasswordReset($user));
             }
         );

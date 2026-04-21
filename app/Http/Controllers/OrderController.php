@@ -96,22 +96,13 @@ class OrderController extends Controller
                 $book->decrement('stock_quantity', $item->quantity);
             }
 
+            // This update triggers your OrderObserver automatically
             $order->update([
                 'status' => 'pending',
                 'address_id' => Auth::user()->addresses()->where('is_default', true)->first()->id,
             ]);
 
-            $admins = User::where('role', 'admin')->get();
-            
-
-            $order->user->notify(new OrderStatusUpdated($order));
-
-            Notification::send($admins, new UserActionNotification('Order Status Changed', [
-                'order_id' => $order->id,
-                'new_status' => $request->status,
-                'url' => route('admin.orders.index', [], false)
-            ]));
-
+            // This event triggers your SendNewOrderNotification listener
             event(new \App\Events\OrderPlaced($order));
 
             return redirect()->route('orders.index', ['status' => 'pending'])

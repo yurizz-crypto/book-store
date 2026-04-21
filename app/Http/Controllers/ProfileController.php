@@ -88,6 +88,13 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\CriticalSecurityAlert([
+            'event' => 'User Account Permanently Deleted',
+            'target' => $user->email,
+            'ip' => $request->ip()
+        ]));
+
         Auth::logout();
 
         $user->delete();

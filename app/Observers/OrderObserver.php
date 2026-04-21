@@ -23,14 +23,8 @@ class OrderObserver
         // Only trigger if the 'status' column was modified
         if ($order->wasChanged('status')) {
             
-            // Send the email
+            // Send the detailed notification (handles both email and database)
             $order->user->notify(new OrderStatusUpdated($order));
-
-            // Send the in-app database notification
-            $order->user->notify(new UserActionNotification('Order Status Updated', [
-                'order_id' => $order->id,
-                'new_status' => $order->status
-            ]));
         }
     }
 

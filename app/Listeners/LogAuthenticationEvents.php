@@ -2,15 +2,17 @@
 
 namespace App\Listeners;
 
-use Illuminate\Auth\Events\Login;
-use Illuminate\Auth\Events\Logout;
-use Illuminate\Auth\Events\Failed;
-use OwenIt\Auditing\Models\Audit;
 use App\Models\User;
 use App\Notifications\CriticalSecurityAlert;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
+use OwenIt\Auditing\Models\Audit;
 
-class LogAuthenticationEvents
+class LogAuthenticationEvents implements ShouldQueue 
 {
     public function handle(Login|Logout|Failed $event): void
     {
@@ -21,32 +23,44 @@ class LogAuthenticationEvents
             default => 'unknown',
         };
 
+        // SMART SECURITY ALERTS: Prevent the "Spam Bomb"
         if ($event instanceof Failed) {
-            $admins = User::where('role', 'admin')->get();
-            
-            $details = [
-                'event' => 'Failed Login Attempt',
-                'target' => $event->credentials['email'] ?? 'Unknown',
-                'ip' => request()->ip(),
-            ];
+            $ip = request()->ip();
+            $email = $event->credentials['email'] ?? 'Unknown';
 
-            Notification::send($admins, new CriticalSecurityAlert($details));
+            // Only notify admins if the same IP fails 5 times.
+            if (RateLimiter::tooManyAttempts('admin_login_alert:' . $ip, 5)) {
+                $admins = User::where('role', 'admin')->get();
+                
+                Notification::send($admins, new CriticalSecurityAlert([
+                    'event'  => 'Repeated Failed Login Attempts (Brute Force Warning)',
+                    'target' => $email,
+                    'ip'     => $ip,
+                ]));
+
+                // Clear the limiter so we don't send 100 emails for the next 100 attempts
+                RateLimiter::clear('admin_login_alert:' . $ip);
+            } else {
+                // Register the failed attempt for 1 hour
+                RateLimiter::hit('admin_login_alert:' . $ip, 3600); 
+            }
         }
+        
+        $userId = $event->user?->id;
+        $userClass = $event->user ? get_class($event->user) : User::class;
+        
+        $attemptedEmail = $event->credentials['email'] ?? ($event->user?->email ?? 'Unknown');
 
-        $user = $event->user;
-
-        if ($user) {
-            Audit::create([
-                'auditable_type' => get_class($user),
-                'auditable_id'   => $user->id,
-                'event'          => $eventName,
-                'user_id'        => $user->id,
-                'user_type'      => get_class($user),
-                'url'            => request()->fullUrl(),
-                'ip_address'     => request()->ip(),
-                'user_agent'     => request()->userAgent(),
-                'new_values'     => ['email' => $user->email],
-            ]);
-        }
+        Audit::create([
+            'auditable_type' => $userClass,
+            'auditable_id'   => $userId ?? 0,
+            'event'          => $eventName,
+            'user_id'        => $userId,
+            'user_type'      => $userId ? $userClass : null,
+            'url'            => request()->fullUrl(),
+            'ip_address'     => request()->ip(),
+            'user_agent'     => request()->userAgent(),
+            'new_values'     => ['attempted_email' => $attemptedEmail],
+        ]);
     }
 }

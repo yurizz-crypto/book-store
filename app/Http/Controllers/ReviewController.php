@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ReviewSubmitted;
 use App\Models\Book;
 use App\Models\Review;
 use Illuminate\Http\Request;
@@ -14,34 +15,23 @@ class ReviewController extends Controller
 
     public function store(Request $request, Book $book)
     {
-        $this->authorize('create', [Review::class, $book]);
-        
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        $hasCompletedOrder = Auth::user()->orders()
-            ->where('status', 'completed')
-            ->whereHas('orderItems', fn($q) => $q->where('book_id', $book->id))
-            ->exists();
+        $user = Auth::user();
 
-        if (!$hasCompletedOrder && !Auth::user()->isAdmin()) {
+        if (!$user->isAdmin() && !$user->hasPurchasedBook($book)) {
             return back()->with('error', 'You must have a completed order for this book to leave a review.');
         }
 
         $review = Review::updateOrCreate(
-            [
-                'user_id' => Auth::id(),
-                'book_id' => $book->id,
-            ],
-            [
-                'rating' => $validated['rating'],
-                'comment' => $validated['comment'],
-            ]
+            ['user_id' => $user->id, 'book_id' => $book->id],
+            ['rating' => $validated['rating'], 'comment' => $validated['comment']]
         );
 
-        event(new \App\Events\ReviewSubmitted($review));
+        event(new ReviewSubmitted($review));
 
         return redirect()->route('books.show', $book)
             ->with('success', 'Review processed successfully!');
@@ -49,9 +39,7 @@ class ReviewController extends Controller
 
     public function destroy(Review $review)
     {
-        if (Auth::id() !== $review->user_id && !Auth::user()->isAdmin()) {
-            abort(403, 'Unauthorized action.');
-        }
+        $this->authorize('delete', $review);
 
         $book = $review->book;
         $review->delete();

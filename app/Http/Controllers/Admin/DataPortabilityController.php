@@ -13,22 +13,21 @@ class DataPortabilityController extends Controller
 {
     public function exportBooks(Request $request)
     {
-        ini_set('memory_limit', '-1');
-        set_time_limit(300); 
-
         $filters = $request->only(['category_id', 'stock_status', 'price_min', 'price_max', 'date_from', 'date_to']);
         $columns = $request->input('columns', []);
         $format = $request->input('format', 'xlsx');
         
-        $filename = 'pageturner_books_' . now()->format('Y-m-d_H-i-s') . '.' . $format;
+        $filename = 'exports/pageturner_books_' . now()->format('Y-m-d_H-i-s') . '.' . $format;
         
-        $writerType = match($format) {
-            'csv' => \Maatwebsite\Excel\Excel::CSV,
-            'pdf' => \Maatwebsite\Excel\Excel::DOMPDF,
-            default => \Maatwebsite\Excel\Excel::XLSX,
-        };
+        $adminUser = $request->user();
 
-        return (new BooksExport($filters, $columns))->download($filename, $writerType);
+        (new BooksExport($filters, $columns))
+            ->queue($filename, 'public')
+            ->chain([
+                new \App\Jobs\NotifyExportCompleted($adminUser, $filename)
+            ]);
+
+        return back()->with('success', 'Books export queued! You will receive a notification with the download link when the file is ready.');
     }
 
     public function importBooks(Request $request)
@@ -69,17 +68,25 @@ class DataPortabilityController extends Controller
         ]);
     }
 
-    // Admin Order Export
     public function exportOrders(Request $request)
     {
         $filters = $request->only(['status', 'date_from', 'date_to', 'user_id']);
         $format = $request->input('format', 'xlsx');
-        $filename = 'pageturner_orders_' . now()->format('Y-m-d');
+        
+        // Save the file in an exports folder inside your storage/app/public directory
+        $filename = 'exports/pageturner_orders_' . now()->format('Y-m-d_His') . '.' . $format;
 
-        if ($format === 'csv') {
-            return Excel::download(new \App\Exports\OrdersExport($filters), $filename . '.csv', \Maatwebsite\Excel\Excel::CSV);
-        }
-        return Excel::download(new \App\Exports\OrdersExport($filters), $filename . '.xlsx');
+        $adminUser = $request->user();
+
+        // 1. Queue the export
+        // 2. Chain the notification job to fire immediately after it finishes
+        (new \App\Exports\OrdersExport($filters))
+            ->queue($filename, 'public')
+            ->chain([
+                new \App\Jobs\NotifyExportCompleted($adminUser, $filename)
+            ]);
+
+        return back()->with('success', 'Orders export queued! You will receive a notification with the download link when the file is ready.');
     }
 
     // Financial Report Export

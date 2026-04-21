@@ -1,18 +1,16 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use App\Models\Order;
+
+use App\Events\OrderPlaced;
+use App\Http\Requests\StoreCartItemRequest;
+use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Models\Book;
-use App\Models\User;
-use App\Notifications\NewOrderReceived;
-use App\Notifications\OrderStatusUpdated;
+use App\Models\Order;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
-use App\Policies\OrderPolicy;
-use App\Notifications\UserActionNotification;
 
 class OrderController extends Controller
 {
@@ -24,122 +22,11 @@ class OrderController extends Controller
         
         $orders = Order::where('user_id', Auth::id())
             ->where('status', $status)
-            ->with('orderItems.book')
+            ->with('orderItems.book') // Prevents N+1
             ->latest()
             ->paginate(10);
 
         return view('orders.index', compact('orders', 'status'));
-    }
-
-    public function show(Order $order)
-    {
-        $this->authorize('view', $order);
-        $order->load('orderItems.book', 'user');
-        return view('orders.show', compact('order'));
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'book_id' => 'required|exists:books,id',
-            'quantity' => 'required|integer|min:1'
-        ]);
-
-        $book = Book::findOrFail($request->book_id);
-
-        // Check if enough stock exists before adding to cart
-        if ($book->stock_quantity < $request->quantity) {
-            return back()->with('error', "Only {$book->stock_quantity} units left in stock.");
-        }
-
-        $order = Order::firstOrCreate(
-            ['user_id' => Auth::id(), 'status' => 'cart'],
-            ['total_amount' => 0]
-        );
-
-        $item = $order->orderItems()->where('book_id', $book->id)->first();
-
-        if ($item) {
-            $item->update([
-                'quantity' => $item->quantity + $request->quantity,
-                'unit_price' => $book->price
-            ]);
-        } else {
-            $order->orderItems()->create([
-                'book_id' => $book->id,
-                'quantity' => $request->quantity,
-                'unit_price' => $book->price
-            ]);
-        }
-
-        $order->load('orderItems');
-        $order->update([
-            'total_amount' => $order->orderItems->sum(fn($i) => $i->quantity * $i->unit_price)
-        ]);
-        
-        return redirect()->route('orders.index', ['status' => 'cart'])->with('success', 'Added to cart!');
-    }
-
-    public function checkout(Request $request, Order $order)
-    {
-        if (!Auth::user()->hasAddress()) {
-            return redirect()->route('profile.edit')->with('error', 'Please add a shipping address.');
-        }
-
-        return DB::transaction(function () use ($order, $request) {
-            foreach ($order->orderItems as $item) {
-                $book = $item->book;
-                if ($book->stock_quantity < $item->quantity) {
-                    throw new \Exception("The book '{$book->title}' is now out of stock.");
-                }
-                
-                $book->decrement('stock_quantity', $item->quantity);
-            }
-
-            // This update triggers your OrderObserver automatically
-            $order->update([
-                'status' => 'pending',
-                'address_id' => Auth::user()->addresses()->where('is_default', true)->first()->id,
-            ]);
-
-            // This event triggers your SendNewOrderNotification listener
-            event(new \App\Events\OrderPlaced($order));
-
-            return redirect()->route('orders.index', ['status' => 'pending'])
-                ->with('success', 'Order placed successfully!');
-        });
-    }
-    
-    public function update(Request $request, Order $order)
-    {
-        $oldStatus = $order->status;
-        $newStatus = $request->status;
-
-        if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled' && $oldStatus !== 'cart') {
-            DB::transaction(function () use ($order) {
-                foreach ($order->orderItems as $item) {
-                    $item->book->increment('stock_quantity', $item->quantity);
-                }
-                // NOTE: This update will now automatically trigger the Observer 
-                // and notify the customer that their order was cancelled!
-                $order->update(['status' => 'cancelled']); 
-            });
-            return back()->with('success', 'Order cancelled and stock restored.');
-        }
-
-        if (Auth::user()->isAdmin()) {
-            // This single line triggers the Observer to send both the email and in-app alert
-            $order->update(['status' => $request->status]);
-
-            return back()->with('success', 'Status updated and customer notified.');
-        }
-
-        if ($oldStatus === 'cart' && $newStatus === 'cancelled') {
-            $order->delete();
-            return back()->with('success', 'Cart cleared.');
-        }
-
-        return back()->with('error', 'Unauthorized action.');
     }
 
     public function adminIndex(Request $request)
@@ -148,10 +35,118 @@ class OrderController extends Controller
 
         $orders = Order::where('status', $status)
             ->where('status', '!=', 'cart')
-            ->with(['user', 'orderItems.book'])
+            ->with(['user', 'orderItems.book']) // Prevents N+1
             ->latest()
             ->paginate(15);
 
         return view('admin.orders.index', compact('orders', 'status'));
+    }
+
+    public function show(Order $order)
+    {
+        $this->authorize('view', $order);
+        
+        $order->load(['orderItems.book', 'user']);
+        
+        return view('orders.show', compact('order'));
+    }
+
+    public function store(StoreCartItemRequest $request)
+    {
+        $book = Book::findOrFail($request->book_id);
+
+        if ($book->stock_quantity < $request->quantity) {
+            return back()->with('error', "Only {$book->stock_quantity} units left in stock.");
+        }
+
+        DB::transaction(function () use ($request, $book) {
+            $order = Order::firstOrCreate(
+                ['user_id' => Auth::id(), 'status' => 'cart'],
+                ['total_amount' => 0]
+            );
+
+            $item = $order->orderItems()->where('book_id', $book->id)->first();
+
+            if ($item) {
+                $item->increment('quantity', $request->quantity);
+                $item->update(['unit_price' => $book->price]); // Sync price in case it changed
+            } else {
+                $order->orderItems()->create([
+                    'book_id'    => $book->id,
+                    'quantity'   => $request->quantity,
+                    'unit_price' => $book->price
+                ]);
+            }
+
+            // PERFORMANCE FIX: Calculate sum directly in the database, don't load models into memory
+            $newTotal = $order->orderItems()->sum(DB::raw('quantity * unit_price'));
+            
+            $order->update(['total_amount' => $newTotal]);
+        });
+        
+        return redirect()->route('orders.index', ['status' => 'cart'])
+            ->with('success', 'Added to cart!');
+    }
+
+    public function checkout(Request $request, Order $order)
+    {
+        if (!Auth::user()->hasAddress()) {
+            return redirect()->route('profile.edit')->with('error', 'Please add a shipping address.');
+        }
+
+        DB::transaction(function () use ($order) {
+            // Lock the rows for updating to prevent race conditions (double-selling stock)
+            $items = $order->orderItems()->with('book')->lockForUpdate()->get();
+
+            foreach ($items as $item) {
+                $book = $item->book;
+                if ($book->stock_quantity < $item->quantity) {
+                    throw new \Exception("The book '{$book->title}' is now out of stock.");
+                }
+                
+                $book->decrement('stock_quantity', $item->quantity);
+            }
+
+            $order->update([
+                'status'     => 'pending',
+                'address_id' => Auth::user()->addresses()->where('is_default', true)->first()->id,
+            ]);
+
+            event(new OrderPlaced($order));
+        });
+
+        return redirect()->route('orders.index', ['status' => 'pending'])
+            ->with('success', 'Order placed successfully!');
+    }
+    
+    public function update(UpdateOrderStatusRequest $request, Order $order)
+    {
+        $oldStatus = $order->status;
+        $newStatus = $request->status;
+
+        // 1. Handle Admin Status Updates
+        if (Auth::user()->isAdmin()) {
+            $order->update(['status' => $newStatus]);
+            return back()->with('success', 'Status updated and customer notified.');
+        }
+
+        // 2. Handle User clearing their cart
+        if ($oldStatus === 'cart' && $newStatus === 'cancelled') {
+            $order->delete();
+            return back()->with('success', 'Cart cleared.');
+        }
+
+        // 3. Handle User cancelling an active order
+        if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+            DB::transaction(function () use ($order) {
+                foreach ($order->orderItems()->with('book')->get() as $item) {
+                    $item->book->increment('stock_quantity', $item->quantity);
+                }
+                $order->update(['status' => 'cancelled']); 
+            });
+            return back()->with('success', 'Order cancelled and stock restored.');
+        }
+
+        return back()->with('error', 'Unauthorized action.');
     }
 }

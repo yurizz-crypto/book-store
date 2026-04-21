@@ -2,67 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use App\Http\Requests\StoreBookRequest;
+use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class BookController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Book::query();
+        $books = Book::with('category') // Eager load to prevent N+1 queries
+            ->search($request->search)  // Utilize our clean model scope
+            ->when($request->filled('category'), fn($q) => $q->where('category_id', $request->category))
+            ->when($request->sort === 'price_asc', fn($q) => $q->orderBy('price', 'asc'))
+            ->when($request->sort === 'price_desc', fn($q) => $q->orderBy('price', 'desc'))
+            ->when(!in_array($request->sort, ['price_asc', 'price_desc']), fn($q) => $q->latest())
+            ->paginate(12)
+            ->withQueryString();
 
-        if ($request->filled('search')) {
-            $searchTerm = trim($request->search);
-
-            $query->where(function($q) use ($searchTerm) {
-                $q->where(DB::raw('LOWER(title)'), 'like', '%' . strtolower($searchTerm) . '%')
-                ->orWhere(DB::raw('LOWER(author)'), 'like', '%' . strtolower($searchTerm) . '%');
-            });
-        }
-
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
-        }
-
-        // Sort logic
-        switch ($request->sort) {
-            case 'price_asc':
-                $query->orderBy('price', 'asc');
-                break;
-            case 'price_desc':
-                $query->orderBy('price', 'desc');
-                break;
-            default:
-                $query->latest();
-                break;
-        }
-
-        $books = $query->paginate(12)->withQueryString();
-        $categories = Category::all();
-
-        return view('books.index', compact('books', 'categories'));
+        return view('books.index', [
+            'books' => $books,
+            'categories' => $this->getCachedCategories()
+        ]);
     }
 
     public function create()
     {
-        $categories = Category::all();
-        return view('books.create', compact('categories'));
+        return view('books.create', [
+            'categories' => $this->getCachedCategories()
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBookRequest $request)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'title' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:books',
-            'price' => 'required|numeric|min:50',
-            'stock_quantity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-            'cover_image' => 'nullable|image|max:2048',
-        ]);
+        $validated = $request->validated();
 
         if ($request->hasFile('cover_image')) {
             $validated['cover_image'] = $request->file('cover_image')->store('covers', 'public');
@@ -77,27 +52,21 @@ class BookController extends Controller
     public function show(Book $book)
     {
         $book->load(['category', 'reviews.user']);
+        
         return view('books.show', compact('book'));
     }
 
     public function edit(Book $book)
     {
-        $categories = Category::all();
-        return view('books.edit', compact('book', 'categories'));
+        return view('books.edit', [
+            'book' => $book,
+            'categories' => $this->getCachedCategories()
+        ]);
     }
 
-    public function update(Request $request, Book $book)
+    public function update(UpdateBookRequest $request, Book $book)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'title' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:books,isbn,' . $book->id,
-            'price' => 'required|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0',
-            'description' => 'nullable|string',
-            'cover_image' => 'nullable|image|max:2048',
-        ]);
+        $validated = $request->validated();
 
         if ($request->hasFile('cover_image')) {
             $validated['cover_image'] = $request->file('cover_image')->store('covers', 'public');
@@ -112,7 +81,17 @@ class BookController extends Controller
     public function destroy(Book $book)
     {
         $book->delete();
+        
         return redirect()->route('books.index')
             ->with('success', 'Book deleted successfully!');
+    }
+
+    /**
+     * Retrieve categories from cache, or cache them forever if missing.
+     * Note: Remember to clear this cache ('categories_all') when a category is created/updated/deleted.
+     */
+    private function getCachedCategories()
+    {
+        return Cache::rememberForever('categories_all', fn() => Category::all());
     }
 }

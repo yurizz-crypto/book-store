@@ -4,13 +4,15 @@ namespace App\Imports;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class UsersImport implements ToModel, WithHeadingRow, WithValidation
+class UsersImport implements ToModel, WithHeadingRow, WithValidation, ShouldQueue, WithBatchInserts, WithChunkReading
 {
-
     protected $defaultRole;
     
     public function __construct($defaultRole = 'customer')
@@ -18,11 +20,6 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
         $this->defaultRole = $defaultRole;
     }
 
-    /**
-    * @param array $row
-    *
-    * @return \Illuminate\Database\Eloquent\Model|null
-    */
     public function model(array $row)
     {
         $csvRole = strtolower($row['role_id'] ?? $row['role'] ?? $this->defaultRole);
@@ -35,15 +32,11 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
             'first_name' => $row['first_name'],
             'last_name'  => $row['last_name'],
             'email'      => $row['email'],
-            'password'   => \Illuminate\Support\Facades\Hash::make('password'), 
+            'password'   => Hash::make('password'), 
             'role'       => $csvRole, 
         ]);
     }
 
-    /**
-     * Validation rules for the CSV data.
-     * * @return array
-     */
     public function rules(): array
     {
         return [
@@ -52,5 +45,15 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
             'email'      => 'required|email|unique:users,email',
             'role_id'    => 'nullable|in:admin,user,ADMIN,USER,Admin,User,customer,CUSTOMER', 
         ];
+    }
+
+    public function batchSize(): int
+    {
+        return 1000;
+    }
+
+    public function chunkSize(): int
+    {
+        return 1000;
     }
 }

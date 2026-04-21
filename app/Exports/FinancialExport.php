@@ -20,24 +20,22 @@ class FinancialExport implements FromCollection, WithHeadings, WithTitle
 
     public function collection()
     {
-        // Calculate financial summaries based on completed orders
-        $orders = Order::where('status', 'completed')
-            ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
-            ->get();
+        $query = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$this->dateFrom, $this->dateTo]);
 
-        $totalRevenue = $orders->sum('total_amount');
+        $totalOrders = $query->count();
+        $totalRevenue = (float) $query->sum('total_amount'); 
+        
         $estimatedTax = $totalRevenue * 0.12;
         $netRevenue = $totalRevenue - $estimatedTax;
 
-        return collect([
-            [
-                'Period' => $this->dateFrom->format('Y-m-d') . ' to ' . $this->dateTo->format('Y-m-d'),
-                'Total Orders' => $orders->count(),
-                'Gross Revenue' => number_format($totalRevenue, 2),
-                'Estimated Tax (12%)' => number_format($estimatedTax, 2),
-                'Net Revenue' => number_format($netRevenue, 2),
-            ]
-        ]);
+        return collect([[
+            'Period' => $this->dateFrom->format('Y-m-d') . ' to ' . $this->dateTo->format('Y-m-d'),
+            'Total Orders' => $totalOrders,
+            'Gross Revenue' => number_format($totalRevenue, 2),
+            'Estimated Tax (12%)' => number_format($estimatedTax, 2),
+            'Net Revenue' => number_format($netRevenue, 2),
+        ]]);
     }
 
     public function headings(): array

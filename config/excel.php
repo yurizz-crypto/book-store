@@ -15,7 +15,7 @@ return [
         | Here you can specify how big the chunk should be.
         |
         */
-        'chunk_size'             => 1000,
+        'chunk_size'             => 1500,
 
         /*
         |--------------------------------------------------------------------------
@@ -244,7 +244,7 @@ return [
         | Drivers: memory|illuminate|batch
         |
         */
-        'driver'      => 'memory',
+        'driver'      => 'illuminate',
 
         /*
         |--------------------------------------------------------------------------
@@ -273,7 +273,7 @@ return [
         |
         */
         'illuminate'  => [
-            'store' => null,
+            'store' => env('CACHE_DRIVER', 'file'),
         ],
 
         /*

@@ -8,8 +8,9 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Maatwebsite\Excel\Concerns\WithCustomChunkSize;
 
-class OrdersExport implements FromQuery, WithHeadings, WithMapping, ShouldQueue
+class OrdersExport implements FromQuery, WithHeadings, WithMapping, ShouldQueue, WithCustomChunkSize
 {
     use Exportable;
 
@@ -43,6 +44,11 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping, ShouldQueue
         }
 
         return $query;
+    }
+
+    public function chunkSize(): int
+    {
+        return 5000;
     }
 
     public function headings(): array

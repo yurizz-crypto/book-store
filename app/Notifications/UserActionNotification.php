@@ -56,9 +56,9 @@ class UserActionNotification extends Notification implements ShouldQueue
         $dbData = $this->toDatabase($notifiable);
         
         return (new MailMessage)
-            ->subject($dbData['message'])
+            ->subject($dbData['title'])        
             ->greeting('Hello ' . ($notifiable->name ?? 'User') . '!')
-            ->line($dbData['message'])
+            ->line($dbData['title'])            
             ->line('Details: ' . json_encode($dbData['details']))
             ->action('View in Dashboard', url('/dashboard'))
             ->line('Thank you for using our application!');

@@ -1,4 +1,4 @@
-# PageTurner - Activity 3 (Book Store)
+# PageTurner (Book Store)
 
 This repository contains the third activity for the PageTurner project, focusing on a Book Store management system. Included in this repository is an exported PostgreSQL database dump to quickly set up the application with pre-existing tables and seeded test data.
 

@@ -69,7 +69,6 @@
                                 <select name="format" class="w-full text-sm border-gray-300 rounded-xl focus:ring-[#0046FF] focus:border-[#0046FF] bg-gray-50">
                                     <option value="xlsx">Excel (.xlsx)</option>
                                     <option value="csv">CSV (.csv)</option>
-                                    <option value="pdf">PDF Document (.pdf)</option>
                                 </select>
                             </div>
                         </div>

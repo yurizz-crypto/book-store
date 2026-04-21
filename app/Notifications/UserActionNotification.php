@@ -4,68 +4,66 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
-use App\Models\User;
+use Illuminate\Notifications\Notification;
 
 class UserActionNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    protected $action;
-    protected $data;
+    public $message;
+    public $data; // Property to hold the extra data
 
-    public function __construct(string $action, array $data = [])
+    /**
+     * Create a new notification instance.
+     */
+    public function __construct($message, $data = [])
     {
-        $this->action = $action;
+        $this->message = $message;
         $this->data = $data;
     }
 
+    /**
+     * Get the notification's delivery channels.
+     */
     public function via($notifiable)
     {
         return ['database', 'mail'];
     }
 
-    public function toDatabase($notifiable)
-    {
-        if ($notifiable instanceof User) {
-            if ($notifiable->role === 'admin') {
-                return [
-                    'title' => 'System Alert: ' . $this->action, 
-                    'details' => $this->data,
-                    'type' => 'admin_alert',
-                ];
-            } elseif ($notifiable->role === 'customer') {
-                return [
-                    'title' => 'Notification: ' . $this->action, 
-                    'details' => $this->data,
-                    'type' => 'customer_notification',
-                ];
-            }
-        }
-
-        return [
-            'title' => 'General Notification: ' . $this->action,
-            'details' => $this->data,
-            'type' => 'general',
-        ];
-    }
-
+    /**
+     * Get the mail representation of the notification.
+     */
     public function toMail($notifiable)
     {
-        $dbData = $this->toDatabase($notifiable);
-        
-        return (new MailMessage)
-            ->subject($dbData['message'])
-            ->greeting('Hello ' . ($notifiable->name ?? 'User') . '!')
-            ->line($dbData['message'])
-            ->line('Details: ' . json_encode($dbData['details']))
-            ->action('View in Dashboard', url('/dashboard'))
-            ->line('Thank you for using our application!');
+        // Default to dashboard if no URL is provided
+        $url = $this->data['url'] ?? url('/admin/dashboard');
+
+        $mail = (new MailMessage)
+                    ->subject('System Notification: Action Completed')
+                    ->greeting('Hello ' . ($notifiable->first_name ?? 'User') . ',')
+                    ->line($this->message);
+
+        // Add the details line if it exists
+        if (!empty($this->data['details'])) {
+            $mail->line($this->data['details']);
+        }
+
+        return $mail->action('Download / View', $url)
+                    ->line('Thank you for using our application!');
     }
 
+    /**
+     * Get the array representation of the notification for the database.
+     */
     public function toArray($notifiable)
     {
-        return $this->toDatabase($notifiable);
+        // This makes sure the URL actually saves to the database
+        return [
+            'message' => $this->message,
+            'event'   => $this->data['event'] ?? null,
+            'details' => $this->data['details'] ?? null,
+            'url'     => $this->data['url'] ?? null,
+        ];
     }
 }

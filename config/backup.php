@@ -37,7 +37,10 @@ return [
                 'exclude' => [
                     base_path('vendor'),
                     base_path('node_modules'),
-                    base_path('.git')
+                    base_path('.git'),
+                    storage_path('app/backup-temp'),
+                    storage_path('app/public/exports'),
+                    storage_path('backups'),
                 ],
 
                 /*
@@ -150,7 +153,7 @@ return [
              *
              * Setting of 0 for some algorithms may switch to the strongest compression.
              */
-            'compression_level' => 9,
+            'compression_level' => 1,
 
             /*
              * The filename prefix used for the backup zip file.

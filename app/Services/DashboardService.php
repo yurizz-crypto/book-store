@@ -8,35 +8,59 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Review;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardService
 {
+    /**
+     * Cache duration in seconds (e.g., 900 = 15 minutes)
+     */
+    private const CACHE_TTL = 900;
+
+    /**
+     * Get metrics for the standard user dashboard.
+     */
+    public function getUserMetrics(User $user): array
+    {
+        return [
+            'totalOrders'  => $user->orders()->where('status', '!=', 'cart')->count(),
+            'totalSpent'   => $user->orders()->where('status', 'completed')->sum('total_amount'),
+            'recentOrders' => $user->orders()->where('status', '!=', 'cart')->latest()->take(5)->get(),
+            'recentBooks'  => Book::whereHas('orderItems.order', function($q) use ($user) {
+                                  $q->where('user_id', $user->id)->where('status', 'completed');
+                              })->latest()->take(4)->get(),
+        ];
+    }
+
+    /**
+     * Get metrics for the admin dashboard, utilizing caching for heavy queries.
+     */
     public function getAdminMetrics(): array
     {
         return [
-            'stats'         => $this->getGeneralStats(),
-            'velocity'      => $this->getSalesVelocity(), // NEW
-            'userGrowth'    => $this->getUserGrowth(),
-            'topBooks'      => $this->getTopBooks(),
-            'topCategories' => $this->getTopCategories(),
+            // Cached Aggregations
+            'stats'         => Cache::remember('admin_stats', self::CACHE_TTL, fn() => $this->getGeneralStats()),
+            'velocity'      => Cache::remember('admin_velocity', self::CACHE_TTL, fn() => $this->getSalesVelocity()),
+            'userGrowth'    => Cache::remember('admin_user_growth', self::CACHE_TTL, fn() => $this->getUserGrowth()),
+            'topBooks'      => Cache::remember('admin_top_books', self::CACHE_TTL, fn() => $this->getTopBooks()),
+            'topCategories' => Cache::remember('admin_top_categories', self::CACHE_TTL, fn() => $this->getTopCategories()),
+            'statusSummary' => Cache::remember('admin_status_summary', self::CACHE_TTL, fn() => $this->getStatusSummary()),
+            
+            // Live Data (Not cached because admins need real-time operational awareness here)
             'lowStock'      => $this->getLowStockBooks(),
             'recentOrders'  => Order::with('user')->latest()->take(6)->get(),
-            'statusSummary' => Order::select('status', DB::raw('count(*) as total'))->groupBy('status')->get(),
             'recentReviews' => Review::with(['user', 'book'])->latest()->take(4)->get(),
         ];
     }
 
     private function getSalesVelocity(): array 
     {
-        $today = Order::whereDate('created_at', now())->where('status', 'completed')->sum('total_amount');
-        $yesterday = Order::whereDate('created_at', now()->subDay())->where('status', 'completed')->sum('total_amount');
+        $today = Order::whereDate('created_at', today())->where('status', 'completed')->sum('total_amount');
+        $yesterday = Order::whereDate('created_at', today()->subDay())->where('status', 'completed')->sum('total_amount');
         
-        $growth = 0;
-        if ($yesterday > 0) {
-            $growth = (($today - $yesterday) / $yesterday) * 100;
-        } else {
-            $growth = $today > 0 ? 100 : 0;
-        }
+        $growth = $yesterday > 0 
+            ? (($today - $yesterday) / $yesterday) * 100 
+            : ($today > 0 ? 100 : 0);
 
         return [
             'today' => $today,
@@ -45,7 +69,8 @@ class DashboardService
         ];
     }
 
-    private function getGeneralStats(): array {
+    private function getGeneralStats(): array 
+    {
         return [
             'users'      => User::count(),
             'books'      => Book::count(),
@@ -56,30 +81,49 @@ class DashboardService
         ];
     }
 
-    private function getUserGrowth() {
+    private function getUserGrowth() 
+    {
         return User::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as total'))
             ->where('created_at', '>=', now()->subDays(7))
-            ->groupBy('date')->orderBy('date', 'ASC')->get();
+            ->groupBy('date')
+            ->orderBy('date', 'ASC')
+            ->get();
     }
 
-    private function getTopBooks() {
+    private function getTopBooks() 
+    {
         return Book::join('order_items', 'books.id', '=', 'order_items.book_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('orders.status', 'completed')
             ->select('books.id', 'books.title', DB::raw('SUM(order_items.quantity * order_items.unit_price) as total_earned'))
-            ->groupBy('books.id', 'books.title')->orderByDesc('total_earned')->take(3)->get();
+            ->groupBy('books.id', 'books.title')
+            ->orderByDesc('total_earned')
+            ->take(3)
+            ->get();
     }
 
-    private function getTopCategories() {
+    private function getTopCategories() 
+    {
         return Category::join('books', 'categories.id', '=', 'books.category_id')
             ->join('order_items', 'books.id', '=', 'order_items.book_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('orders.status', 'completed')
             ->select('categories.id', 'categories.name', DB::raw('COUNT(order_items.id) as sales_count'))
-            ->groupBy('categories.id', 'categories.name')->orderByDesc('sales_count')->take(3)->get();
+            ->groupBy('categories.id', 'categories.name')
+            ->orderByDesc('sales_count')
+            ->take(3)
+            ->get();
     }
 
-    private function getLowStockBooks() {
+    private function getStatusSummary()
+    {
+        return Order::select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->get();
+    }
+
+    private function getLowStockBooks() 
+    {
         return Book::where('stock_quantity', '<', 10)
             ->orderBy('stock_quantity', 'asc')
             ->paginate(5, ['*'], 'stock_page');

@@ -4,51 +4,72 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Exports\BooksExport;
-use App\Imports\BooksImport;
-use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DataPortabilityController extends Controller
 {
+    /**
+     * Admin Book Export - Optimized for Speed
+     */
     public function exportBooks(Request $request)
     {
-        ini_set('memory_limit', '-1');
-        set_time_limit(300); 
-
         $filters = $request->only(['category_id', 'stock_status', 'price_min', 'price_max', 'date_from', 'date_to']);
-        $columns = $request->input('columns', []);
-        $format = $request->input('format', 'xlsx');
-        
-        $filename = 'pageturner_books_' . now()->format('Y-m-d_H-i-s') . '.' . $format;
-        
-        $writerType = match($format) {
-            'csv' => \Maatwebsite\Excel\Excel::CSV,
-            'pdf' => \Maatwebsite\Excel\Excel::DOMPDF,
-            default => \Maatwebsite\Excel\Excel::XLSX,
-        };
+        $format = $request->input('format', 'csv'); 
+        $filename = 'exports/books_' . now()->timestamp . '.' . $format;
 
-        return (new BooksExport($filters, $columns))->download($filename, $writerType);
+        \App\Jobs\FastBooksExportJob::dispatch($filters, $filename, $request->user(), $format);
+
+        return back()->with('success', "Book export ({$format}) started!");
     }
 
+    /**
+     * Bulk Book Import via Queue
+     */
     public function importBooks(Request $request)
     {
+        $request->validate(['import_file' => 'required|mimes:csv,xlsx|max:204800']);
+        
+        // Store file in private storage for the Job to pick up
+        $path = $request->file('import_file')->store('temp-imports');
 
-        \Log::info('Import request received', [
-        'has_file' => $request->hasFile('import_file'),
-        'file_valid' => $request->file('import_file')?->isValid(),
-        'error' => $request->file('import_file')?->getError(),
-        ]);
+        // Dispatch the background job
+        \App\Jobs\FastBooksImportJob::dispatch($path);
 
+        // NEW: If the request comes from JavaScript, return a JSON success message
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'File uploaded! Book import queued for high-speed processing.'
+            ]);
+        }
+
+        // Fallback for standard HTML form submissions
+        return back()->with('success', 'Book import queued for high-speed processing!');
+    }
+    
+    public function importUsers(Request $request)
+    {
         $request->validate([
-            'import_file' => 'required|mimes:xlsx,csv|max:20480',
+            'import_file' => 'required|file|mimes:csv,txt,xlsx',
+            // Make sure it validates the role too
+            'default_role' => 'required|string|in:customer,admin' 
         ]);
 
-        Excel::queueImport(new BooksImport, $request->file('import_file'));
+        $file = $request->file('import_file');
+        $filePath = $file->store('imports', 'local');
+        
+        // 1. Grab the role from the form
+        $role = $request->input('default_role'); 
 
-        return back()->with('success', 'Book import has been queued! It will process in the background.');
+        // 2. Pass BOTH the file path AND the role to the Job
+        \App\Jobs\FastUsersImportJob::dispatch($filePath, $role);
+
+        return back()->with('success', 'User import started!');
     }
 
+    /**
+     * CSV Template Generator using Streams for minimal memory usage
+     */
     public function downloadTemplate(): StreamedResponse
     {
         $headers = ['ISBN', 'Title', 'Author', 'Price', 'Stock', 'Category', 'Description'];
@@ -69,57 +90,37 @@ class DataPortabilityController extends Controller
         ]);
     }
 
-    // Admin Order Export
-    public function exportOrders(Request $request)
+    /**
+     * Manual Backup Trigger - Process and Notify
+     */
+    public function triggerBackup(Request $request)
     {
-        $filters = $request->only(['status', 'date_from', 'date_to', 'user_id']);
-        $format = $request->input('format', 'xlsx');
-        $filename = 'pageturner_orders_' . now()->format('Y-m-d');
+        $adminUser = $request->user();
 
-        if ($format === 'csv') {
-            return Excel::download(new \App\Exports\OrdersExport($filters), $filename . '.csv', \Maatwebsite\Excel\Excel::CSV);
-        }
-        return Excel::download(new \App\Exports\OrdersExport($filters), $filename . '.xlsx');
-    }
-
-    // Financial Report Export
-    public function exportFinancials(Request $request)
-    {
-        $dateFrom = $request->input('date_from') ? \Carbon\Carbon::parse($request->input('date_from')) : null;
-        $dateTo = $request->input('date_to') ? \Carbon\Carbon::parse($request->input('date_to')) : null;
+        \App\Jobs\ProcessAndNotifyBackup::dispatch($adminUser);
         
-        return Excel::download(new \App\Exports\FinancialExport($dateFrom, $dateTo), 'financial_report_' . now()->format('F_Y') . '.xlsx');
+        return back()->with('success', 'Backup has been started! You will receive a notification with the download link once it is finished.');
     }
 
-    // Manual Backup Trigger
-    public function triggerBackup()
+    /**
+     * Admin Order Export
+     */
+    public function exportOrders(Request $request) 
     {
-        // Use queue() instead of call() so the user isn't stuck waiting
-        \Illuminate\Support\Facades\Artisan::queue('backup:run');
+        $format = $request->input('format', 'csv');
+        $filename = 'exports/orders_' . now()->timestamp . '.' . $format;
         
-        return back()->with('success', 'Backup has been started in the background! You will receive an email when it completes.');
+        \App\Jobs\FastOrdersExportJob::dispatch($request->all(), $filename, $request->user(), $format);
+        return back()->with('success', "Orders export ({$format}) queued!");
     }
-
-    // Export Users (with GDPR Check)
-    public function exportUsers(Request $request)
-    {
-        // Check if the admin checked the "Redact PII" box
-        $redactPII = $request->has('redact_pii'); 
-        $filename = 'pageturner_users_' . now()->format('Y-m-d') . '.xlsx';
+    /**
+     * User Export with Optional PII Redaction
+     */
+    public function exportUsers(Request $request) {
+        $format = $request->input('format', 'csv');
+        $filename = 'exports/users_' . now()->timestamp . '.' . $format;
         
-        return Excel::download(new \App\Exports\UsersExport($redactPII), $filename);
-    }
-
-    // Import Corporate Users
-    public function importUsers(Request $request)
-    {
-        $request->validate([
-            'users_file' => 'required|mimes:xlsx,csv|max:10240',
-            'default_role' => 'required|in:admin,customer'
-        ]);
-
-        Excel::queueImport(new \App\Imports\UsersImport($request->default_role), $request->file('users_file'));
-
-        return back()->with('success', 'Corporate users queued for import!');
+        \App\Jobs\FastUsersExportJob::dispatch($request->has('redact_pii'), $filename, $request->user(), $format);
+        return back()->with('success', "Users export ({$format}) queued!");
     }
 }

@@ -9,7 +9,7 @@ class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'book_id', 'quantity','unit_price'];
+    protected $fillable = ['order_id', 'book_id', 'quantity', 'unit_price'];
 
     public function order()
     {
@@ -21,8 +21,11 @@ class OrderItem extends Model
         return $this->belongsTo(Book::class);
     }
 
-    public function getSubtotalAttribute()
+    /**
+     * Fix: Multiply quantity by unit price.
+     */
+    public function getSubtotalAttribute(): float
     {
-        return $this->unit_price;
+        return (float) ($this->quantity * $this->unit_price);
     }
 }

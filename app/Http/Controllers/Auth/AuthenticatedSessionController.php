@@ -8,59 +8,49 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Notifications\TwoFactorCode;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
     public function create(): View
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        // 1. Verify credentials securely (returns the User, does not log them in yet)
+        $user = $request->authenticate();
 
-        $user = Auth::user();
-
-        // Check if 2FA is enabled for this user
+        // 2. Intercept for 2FA if enabled
         if ($user->two_factor_enabled) {
-            // Generate a 6-digit OTP
-            $user->two_factor_code = rand(100000, 999999);
-            $user->two_factor_expires_at = now()->addMinutes(10);
-            $user->save();
+            
+            // CLEAN CODE: Use update() to save a database step instead of manually assigning then saving
+            $user->update([
+                'two_factor_code' => rand(100000, 999999),
+                'two_factor_expires_at' => now()->addMinutes(10)
+            ]);
 
-            // Send the email notification using your Gmail SMTP setup
-            $user->notify(new \App\Notifications\TwoFactorCode());
+            $user->notify(new TwoFactorCode());
 
-            // Log the user out immediately so they can't browse yet
-            Auth::logout();
-
-            // Store the user's ID in the session to identify them during verification
             $request->session()->put('2fa_user_id', $user->id);
 
             return redirect()->route('2fa.index');
         }
 
+        // 3. Log the user in ONLY if they bypassed 2FA
+        Auth::login($user, $request->boolean('remember'));
+        
         $request->session()->regenerate();
         
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');

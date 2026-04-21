@@ -59,7 +59,7 @@
                     {{-- Book Import --}}
                     <div>
                         <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Import Catalog</label>
-                        <form action="{{ route('admin.import.books') }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
+                        <form id="importForm" action="{{ route('admin.import.books') }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3">
                             @csrf
                                                         
                             @if ($errors->has('import_file'))
@@ -69,7 +69,7 @@
                             @endif
                             
                             <input type="file" name="import_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
-                            <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 whitespace-nowrap">
+                            <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 text-center">
                                 Upload
                             </button>
                         </form>
@@ -120,11 +120,16 @@
                 </div>
 
                 <div class="p-8 space-y-8 flex-1 bg-white">
-                    {{-- User Import --}}
                     <div>
                         <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-3">Bulk User Import</label>
                         <form action="{{ route('admin.import.users') }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-3">
                             @csrf
+
+                            @if ($errors->has('import_file'))
+                                <div class="text-red-500 text-xs font-bold mt-2">
+                                    {{ $errors->first('import_file') }}
+                                </div>
+                            @endif
                             
                             {{-- NEW: Role Selector Dropdown --}}
                             <select name="default_role" class="w-full text-xs font-bold text-[#001BB7] bg-[#001BB7]/5 border-none rounded-xl focus:ring-0 cursor-pointer py-3 px-4">
@@ -133,7 +138,7 @@
                             </select>
 
                             <div class="flex flex-col sm:flex-row gap-3">
-                                <input type="file" name="users_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
+                                <input type="file" name="import_file" accept=".xlsx,.csv" required class="flex-1 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-[#001BB7]/10 file:text-[#001BB7] hover:file:bg-[#001BB7]/20 transition-all cursor-pointer">
                                 <button type="submit" class="bg-[#001BB7] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#0046FF] transition-all shadow-md active:scale-95 whitespace-nowrap">
                                     Upload
                                 </button>
@@ -332,6 +337,54 @@
                 } 
             }
         }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const importForm = document.getElementById('importForm');
+        const submitButton = importForm.querySelector('button[type="submit"]');
+
+        importForm.addEventListener('submit', function (e) {
+            // 1. Stop the standard page-reloading form submission
+            e.preventDefault();
+
+            // 2. Change the button state so the user knows it's uploading
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = 'Uploading...';
+            submitButton.disabled = true;
+
+            // 3. Gather the file data
+            const formData = new FormData(importForm);
+
+            // 4. Send the file in the background using Fetch API
+            fetch(importForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest', // Tells Laravel this is an AJAX request
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Upload is done! The background job has started.
+                    submitButton.innerHTML = 'Upload Complete!';
+                    alert(data.message); // Replace this with a nice UI Toast notification if you have one
+                    importForm.reset();
+                } else {
+                    // Handle validation errors
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    alert('Upload failed. Please check the file size and type.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+                alert('A network error occurred during upload.');
+            });
+        });
     });
 </script>
 

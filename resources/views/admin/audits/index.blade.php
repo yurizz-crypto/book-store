@@ -95,7 +95,16 @@
                                 {{ $audit->created_at->format('M d, Y H:i') }}
                             </td>
                             <td class="p-4 font-bold text-[#001BB7]">
-                                {{ $audit->user ? $audit->user->first_name . ' ' . $audit->user->last_name : 'System/Guest' }}
+                                @if($audit->user)
+                                    <div class="text-[10px] text-[#0046FF] uppercase tracking-widest mb-0.5">
+                                        ID: #{{ $audit->user_id }}
+                                    </div>
+                                    <div class="text-sm">
+                                        {{ $audit->user->first_name }} {{ $audit->user->last_name }}
+                                    </div>
+                                @else
+                                    <span class="text-[#001BB7]/40 italic text-xs font-medium">System/Guest</span>
+                                @endif
                             </td>
 
                             <td class="p-4">

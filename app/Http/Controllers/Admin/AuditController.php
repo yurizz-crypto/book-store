@@ -6,9 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use OwenIt\Auditing\Models\Audit;
 
-use App\Exports\AuditsExport;
-use Maatwebsite\Excel\Facades\Excel;
-
 class AuditController extends Controller
 {
     public function index(Request $request)
@@ -44,14 +41,18 @@ class AuditController extends Controller
 
     public function export(Request $request)
     {
-        $filters = $request->all();
+        // Detect format from request, default to csv
         $format = $request->input('format', 'csv');
-        $filename = 'system_audits_' . now()->format('Ymd_His');
+        $filename = 'exports/audits_' . now()->timestamp . '.' . $format;
 
-        if ($format === 'pdf') {
-            return Excel::download(new AuditsExport($filters), $filename . '.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
-        }
-        
-        return Excel::download(new AuditsExport($filters), $filename . '.csv', \Maatwebsite\Excel\Excel::CSV);
+        // Pass the format to the Job
+        \App\Jobs\FastAuditsExportJob::dispatch(
+            $request->all(), 
+            $filename, 
+            $request->user(), 
+            $format
+        );
+
+        return back()->with('success', "Audit export ({$format}) queued!");
     }
 }

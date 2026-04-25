@@ -3,7 +3,19 @@
 @section('title', 'PageTurner - Online Bookstore')
 
 @section('content')
-    {{-- Hero Section --}}
+    @if(session('ai_match'))
+        <div class="mb-6 p-6 bg-[#F5F1DC] border-l-4 border-[#FF8040] rounded-2xl shadow-lg animate-fade-in">
+            <p class="text-[10px] font-black uppercase tracking-widest text-[#FF8040] mb-2">Your AI Matchmaker Says:</p>
+            <p class="text-[#001BB7] font-bold italic leading-relaxed">"{{ session('ai_match') }}"</p>
+        </div>
+    @endif
+
+    @if($errors->has('ai_error'))
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-bold">
+            {{ $errors->first('ai_error') }}
+        </div>
+    @endif
+
     <div class="relative bg-[#001BB7] text-[#F5F1DC] rounded-3xl p-10 mb-12 overflow-hidden shadow-2xl">
         <div class="relative z-10 max-w-2xl">
             <h1 class="text-6xl font-black mb-4 tracking-tighter uppercase">Welcome to PageTurner</h1>
@@ -11,15 +23,29 @@
                 Discover your next favorite story from our curated collection of quality books. Curating stories that stay with you.
             </p>
 
-            <div class="flex flex-wrap gap-4">
+            <div class="flex flex-wrap gap-4 mb-10">
                 <a href="{{ route('books.index') }}" 
-                   class="bg-[#FF8040] text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#ff9663] transition-all transform hover:-translate-y-1 shadow-lg active:scale-95">
+                class="bg-[#FF8040] text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#ff9663] transition-all transform hover:-translate-y-1 shadow-lg active:scale-95">
                     Browse Books
                 </a>
                 <a href="{{ route('categories.index') }}" 
-                   class="bg-transparent text-[#F5F1DC] border-2 border-[#0046FF] px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#0046FF] transition-all shadow-md">
+                class="bg-transparent text-[#F5F1DC] border-2 border-[#0046FF] px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#0046FF] transition-all shadow-md">
                     View Categories
                 </a>
+            </div>
+
+            {{-- AI Matchmaker Input Section --}}
+            <div class="max-w-xl">
+                <label class="block text-[10px] font-black uppercase tracking-[0.3em] text-[#F5F1DC]/60 mb-3">AI Book Matchmaker</label>
+                <form action="{{ route('ai.matchmake') }}" method="POST" class="relative group">
+                    @csrf
+                    <input type="text" name="prompt" 
+                        class="w-full bg-white/10 border-2 border-[#0046FF] rounded-2xl px-6 py-5 text-[#F5F1DC] font-bold placeholder-[#F5F1DC]/30 focus:ring-0 focus:border-[#FF8040] transition-all"
+                        placeholder="Tell me what you're in the mood to read..." required>
+                    <button type="submit" class="absolute right-3 top-3 bottom-3 bg-[#FF8040] text-white px-6 rounded-xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-transform active:scale-95">
+                        Find Match
+                    </button>
+                </form>
             </div>
         </div>
         

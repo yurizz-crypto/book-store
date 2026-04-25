@@ -190,7 +190,7 @@
                                 {{ substr($review->user->first_name, 0, 1) }}
                             </div>
                             <div>
-                                <p class="font-black text-[#001BB7] uppercase tracking-tighter text-lg leading-none">{{ $review->user->getFullName() }}</p>
+                                <p class="font-black text-[#001BB7] uppercase tracking-tighter text-lg leading-none">{{ $review->user->fullName }}</p>
                                 <span class="text-[9px] text-[#0046FF]/40 font-black uppercase tracking-widest">{{ $review->created_at->diffForHumans() }}</span>
                             </div>
                         </div>

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\DataPortabilityController;
+use App\Http\Controllers\AiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,8 @@ Route::get('/categories/{category}', [CategoryController::class, 'show'])->name(
 */
 // web.php (Authenticated Section)
 Route::middleware('auth')->group(function () {
+    Route::post('/ai/matchmake', [AiController::class, 'matchmake'])->name('ai.matchmake');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export-data', [DashboardController::class, 'exportMyData'])->name('dashboard.export-data');
     

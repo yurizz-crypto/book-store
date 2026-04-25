@@ -253,9 +253,25 @@
                             <div class="w-10 h-10 bg-[#001BB7] rounded-xl flex items-center justify-center text-[#F5F1DC] font-black text-xs shrink-0 shadow-sm">
                                 {{ substr($review->user->first_name, 0, 1) }}
                             </div>
-                            <div>
-                                <p class="text-[10px] font-black uppercase text-[#001BB7] mb-1 group-hover:text-[#FF8040] transition-colors">{{ $review->user->first_name }} on {{ $review->book->title }}</p>
-                                <p class="text-sm italic text-[#001BB7]/70 font-bold line-clamp-1">"{{ $review->comment }}"</p>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <p class="text-[10px] font-black uppercase text-[#001BB7] group-hover:text-[#FF8040] transition-colors">
+                                        {{ $review->user->first_name }} on {{ $review->book->title }}
+                                    </p>
+                                    @if($review->ai_analysis)
+                                        <span class="text-[8px] font-black bg-[#FF8040] text-white px-2 py-0.5 rounded-md uppercase tracking-widest">
+                                            AI Insight
+                                        </span>
+                                    @endif
+                                </div>
+                                
+                                <p class="text-sm italic text-[#001BB7]/70 font-bold line-clamp-1 mb-2">"{{ $review->comment }}"</p>
+                                
+                                @if($review->ai_analysis)
+                                    <div class="p-3 bg-white/60 rounded-xl border border-[#001BB7]/5 text-[11px] font-bold text-[#001BB7]/80 leading-relaxed">
+                                        <span class="text-[#FF8040] font-black">Summary:</span> {{ $review->ai_analysis }}
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </a>

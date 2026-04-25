@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Review;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Ai\Agents\ReviewAnalystAgent;
 
 class DashboardService
 {
@@ -49,8 +50,30 @@ class DashboardService
             // Live Data (Not cached because admins need real-time operational awareness here)
             'lowStock'      => $this->getLowStockBooks(),
             'recentOrders'  => Order::with('user')->latest()->take(6)->get(),
-            'recentReviews' => Review::with(['user', 'book'])->latest()->take(4)->get(),
+            'recentReviews' => $this->getAnalyzedReviews(),
         ];
+    }
+
+    private function getAnalyzedReviews()
+    {
+        return Cache::remember('admin_ai_reviews', self::CACHE_TTL, function () {
+            $reviews = Review::with(['user', 'book'])->latest()->take(4)->get();
+            $agent = new ReviewAnalystAgent();
+
+            return $reviews->map(function ($review) use ($agent) {
+                try {
+                    // Attempt the AI analysis
+                    $review->ai_analysis = $agent->prompt($review->comment)->text;
+                } catch (\Exception $e) {
+                    // Fallback if Gemini is overloaded or the key is busy
+                    $review->ai_analysis = "Summary temporarily unavailable.";
+                    
+                    // Log the error so you can see if it's a rate limit or a connection issue
+                    \Log::warning("Gemini API Error: " . $e->getMessage());
+                }
+                return $review;
+            });
+        });
     }
 
     private function getSalesVelocity(): array 

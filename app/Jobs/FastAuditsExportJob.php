@@ -9,13 +9,20 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
+use OpenSpout\Writer\XLSX\Writer as XLSXWriter;
+use OpenSpout\Writer\CSV\Writer as CSVWriter;
+use OpenSpout\Common\Entity\Row;
 
 class FastAuditsExportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Increased timeout for 1M+ record processing (Lab 7)
+     */
     public $timeout = 900;
+    
     protected $filters;
     protected $filename;
     protected $user;
@@ -26,90 +33,36 @@ class FastAuditsExportJob implements ShouldQueue
         $this->filters = $filters;
         $this->filename = $filename;
         $this->user = $user;
-        $this->format = $format;
+        $this->format = strtolower($format);
     }
 
     public function handle()
     {
-        if ($this->format === 'csv') {
-            $this->handleCsvExport();
-        } else {
-            $this->handleExcelExport();
-        }
+        Log::info("Starting Audit export ({$this->format}): {$this->filename}");
 
-        // Notify user via existing job
-        dispatch(new \App\Jobs\NotifyExportCompleted($this->user, $this->filename));
-    }
-
-    private function handleCsvExport()
-    {
-        $tempPath = tempnam(sys_get_temp_dir(), 'audits_');
-        $handle = fopen($tempPath, 'w');
-        
-        // CSV Headings - Added 'Device'
-        fputcsv($handle, ['Audit ID', 'User ID', 'User Email', 'Event', 'Model Type', 'Model ID', 'Old Values', 'New Values', 'IP Address', 'Device', 'Date']);
-
-        $query = $this->getBaseQuery();
-
-        // High-speed cursor streaming
-        foreach ($query->cursor() as $audit) {
-            fputcsv($handle, [
-                $audit->id,
-                $audit->user_id ?? 'N/A',
-                $audit->email ?? 'System/Guest',
-                strtoupper($audit->event),
-                basename(str_replace('\\', '/', $audit->auditable_type)),
-                $audit->auditable_id,
-                $audit->old_values, 
-                $audit->new_values,
-                $audit->ip_address,
-                $audit->user_agent ?? 'Unknown Device', // Added Device
-                date('Y-m-d H:i:s', strtotime($audit->created_at))
-            ]);
-        }
-
-        fclose($handle);
-        Storage::disk('public')->put($this->filename, fopen($tempPath, 'r+'));
-        unlink($tempPath);
-    }
-
-    private function handleExcelExport()
-    {
-        $excelFormat = match($this->format) {
-            'pdf' => \Maatwebsite\Excel\Excel::DOMPDF,
-            'xlsx' => \Maatwebsite\Excel\Excel::XLSX,
-            default => \Maatwebsite\Excel\Excel::CSV,
+        // 1. Initialize the correct high-speed writer
+        /** @var \OpenSpout\Writer\WriterInterface $writer */
+        $writer = match($this->format) {
+            'xlsx' => new XLSXWriter(),
+            default => new CSVWriter(),
         };
 
-        // Uses a dynamic export class to handle XLSX/PDF via the library
-        Excel::store(new class($this->getBaseQuery()) implements \Maatwebsite\Excel\Concerns\FromQuery, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping {
-            protected $query;
-            public function __construct($query) { $this->query = $query; }
-            public function query() { return $this->query; }
-            public function headings(): array {
-                // Added 'Device' to headings
-                return ['Audit ID', 'User ID', 'User Email', 'Event', 'Model Type', 'Model ID', 'Old Values', 'New Values', 'IP Address', 'Device', 'Date'];
-            }
-            public function map($audit): array {
-                return [
-                    $audit->id,
-                    $audit->user_id ?? 'N/A',
-                    $audit->email ?? 'System/Guest',
-                    strtoupper($audit->event),
-                    basename(str_replace('\\', '/', $audit->auditable_type)),
-                    $audit->auditable_id,
-                    $audit->old_values, 
-                    $audit->new_values,
-                    $audit->ip_address,
-                    $audit->user_agent ?? 'Unknown Device', // Added Device
-                    date('Y-m-d H:i:s', strtotime($audit->created_at))
-                ];
-            }
-        }, $this->filename, 'public', $excelFormat);
-    }
+        // Ensure temp directory exists
+        $tempPath = storage_path('app/temp/' . basename($this->filename));
+        if (!file_exists(dirname($tempPath))) {
+            mkdir(dirname($tempPath), 0755, true);
+        }
 
-    private function getBaseQuery()
-    {
+        $writer->openToFile($tempPath);
+
+        // 2. Add Optimized Headings
+        $writer->addRow(Row::fromValues([
+            'Audit ID', 'User ID', 'User Email', 'Event', 
+            'Model Type', 'Model ID', 'Changes (Old | New)', 
+            'IP Address', 'Device', 'Date'
+        ]));
+
+        // 3. Build the Base Query
         $query = DB::table('audits')
             ->leftJoin('users', 'audits.user_id', '=', 'users.id')
             ->select([
@@ -117,10 +70,9 @@ class FastAuditsExportJob implements ShouldQueue
                 'audits.auditable_type', 'audits.auditable_id', 'audits.old_values', 
                 'audits.new_values', 'audits.ip_address', 'audits.user_agent',
                 'audits.created_at'
-            ])
-            ->orderBy('audits.id', 'desc'); // <-- ADD THIS LINE
+            ]);
 
-        // Reusable filtering logic
+        // Apply Reusable Filtering Logic
         if (!empty($this->filters['user'])) {
             $query->where(function($q) {
                 $q->where('users.first_name', 'like', "%{$this->filters['user']}%")
@@ -130,6 +82,43 @@ class FastAuditsExportJob implements ShouldQueue
         if (!empty($this->filters['event'])) $query->where('event', $this->filters['event']);
         if (!empty($this->filters['model'])) $query->where('auditable_type', 'like', "%{$this->filters['model']}%");
 
-        return $query;
+        /* | PERFORMANCE WIN (Lab 7):
+        | We use cursor() to stream results from the database. 
+        | This ensures we never load more than one row at a time into PHP memory.
+        */
+        foreach ($query->orderBy('audits.id', 'desc')->cursor() as $audit) {
+            // Format the model name for readability
+            $modelName = basename(str_replace('\\', '/', $audit->auditable_type));
+            
+            // Consolidate values to keep the spreadsheet readable
+            $changes = "OLD: " . ($audit->old_values ?? '{}') . " | NEW: " . ($audit->new_values ?? '{}');
+
+            $writer->addRow(Row::fromValues([
+                $audit->id,
+                $audit->user_id ?? 'N/A',
+                $audit->email ?? 'System/Guest',
+                strtoupper($audit->event),
+                $modelName,
+                $audit->auditable_id,
+                $changes,
+                $audit->ip_address,
+                $audit->user_agent ?? 'Unknown Device',
+                date('Y-m-d H:i:s', strtotime($audit->created_at))
+            ]));
+        }
+
+        $writer->close();
+
+        // 4. Move to Public Storage and Cleanup
+        Storage::disk('public')->put($this->filename, fopen($tempPath, 'r+'));
+        
+        if (file_exists($tempPath)) {
+            unlink($tempPath);
+        }
+
+        // 5. Trigger the User Notification (Lab 8)
+        dispatch(new \App\Jobs\NotifyExportCompleted($this->user, $this->filename));
+        
+        Log::info("Audit export completed: {$this->filename}");
     }
 }

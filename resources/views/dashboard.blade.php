@@ -109,56 +109,44 @@
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-[2.5rem] border border-[#0046FF]/5 shadow-xl">
-                <h3 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-6">Recently Purchased</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    @forelse($recentBooks as $book)
-                        <a href="{{ route('books.show', $book) }}" class="group block p-4 rounded-[2rem] border border-transparent hover:border-[#001BB7]/10 hover:scale-[1.05] transition-all duration-300 shadow-sm hover:shadow-md text-center">
-                            @if($book->cover_image)
-                                <div class="aspect-[3/4] rounded-xl border border-[#001BB7]/5 overflow-hidden mb-3 shadow-inner">
-                                    <img src="{{ asset('storage/' . $book->cover_image) }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+            <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
+                <h3 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-8">Your Review Activity</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- FIX: Use the $recentReviews variable passed from your DashboardService --}}
+                    @forelse($recentReviews as $review)
+                        <div class="group relative p-8 bg-[#F5F1DC]/30 rounded-[2.5rem] border border-transparent hover:border-[#0046FF]/10 hover:scale-[1.02] transition-all duration-300">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex text-[#FF8040]">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <svg class="h-4 w-4 {{ $i <= $review->rating ? 'fill-current' : 'text-[#001BB7]/10' }}" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
+                                    @endfor
                                 </div>
+
+                                {{-- SAFETY FIX: Only generate the route if the book exists --}}
+                                @if($review->book)
+                                    <a href="{{ route('books.show', $review->book_id) }}" class="bg-white text-[#001BB7] p-2 rounded-xl shadow-sm hover:bg-[#001BB7] hover:text-white transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
+
+                            {{-- OPTIMIZATION: Display title safely --}}
+                            @if($review->book)
+                                <p class="text-xs font-black text-[#001BB7] uppercase mb-2 tracking-widest">{{ $review->book->title }}</p>
                             @else
-                                <div class="aspect-[3/4] rounded-xl bg-[#F5F1DC]/30 border border-[#001BB7]/5 flex items-center justify-center mb-3 shadow-inner">
-                                    <svg class="w-1/2 h-1/2 text-[#0046FF]/20 group-hover:text-[#FF8040]/30 transition-all duration-500 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                    </svg>
-                                </div>
+                                <p class="text-xs font-black text-red-500 uppercase mb-2 tracking-widest italic">Book Unavailable</p>
                             @endif
-                            <p class="text-[10px] font-black text-[#001BB7] uppercase truncate">{{ $book->title }}</p>
-                        </a>
+                            
+                            <p class="text-[#001BB7]/70 font-bold italic text-sm leading-relaxed line-clamp-2">"{{ $review->comment }}"</p>
+                        </div>
                     @empty
-                        <p class="col-span-2 text-sm font-bold text-[#001BB7]/40 italic">Library is empty.</p>
+                        <p class="text-sm font-bold text-[#001BB7]/40 italic">You haven't shared any reviews yet.</p>
                     @endforelse
                 </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
-            <h3 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-8">Your Review Activity</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                @forelse(Auth::user()->reviews()->latest()->take(4)->get() as $review)
-                    <div class="group relative p-8 bg-[#F5F1DC]/30 rounded-[2.5rem] border border-transparent hover:border-[#0046FF]/10 hover:scale-[1.02] transition-all duration-300">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex text-[#FF8040]">
-                                @for($i = 1; $i <= 5; $i++)
-                                    <svg class="h-4 w-4 {{ $i <= $review->rating ? 'fill-current' : 'text-[#001BB7]/10' }}" viewBox="0 0 20 20">
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                    </svg>
-                                @endfor
-                            </div>
-                            <a href="{{ route('books.show', $review->book) }}" class="bg-white text-[#001BB7] p-2 rounded-xl shadow-sm hover:bg-[#001BB7] hover:text-white transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                            </a>
-                        </div>
-                        <p class="text-xs font-black text-[#001BB7] uppercase mb-2 tracking-widest">{{ $review->book->title }}</p>
-                        <p class="text-[#001BB7]/70 font-bold italic text-sm leading-relaxed line-clamp-2">"{{ $review->comment }}"</p>
-                    </div>
-                @empty
-                    <p class="text-sm font-bold text-[#001BB7]/40 italic">You haven't shared any reviews yet.</p>
-                @endforelse
             </div>
         </div>
 

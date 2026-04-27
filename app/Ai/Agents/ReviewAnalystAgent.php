@@ -15,33 +15,13 @@ class ReviewAnalystAgent implements Agent, Conversational, HasTools
 
     protected string $driver = 'gemini';
 
-    /**
-     * Get the instructions that the agent should follow.
-     */
     public function instructions(): string
     {
-        return "You are an expert bookstore manager. Analyze the provided customer review. " .
-            "Return a very short sentiment label (Positive, Neutral, or Negative) " .
-            "and a one-sentence executive summary of their feedback.";
+        return "You are the PageTurner AI Lead Analyst. Your goal is to synthesize multiple customer reviews into a single, cohesive 'Executive Summary'. " .
+            "Avoid generic phrases like 'The reviews are positive'. Instead, identify specific themes (e.g., 'Readers praise the world-building but found the pacing slow'). " .
+            "Always maintain a professional yet literary tone. Keep your response to one paragraph.";
     }
 
-    /**
-     * Get the list of messages comprising the conversation so far.
-     *
-     * @return Message[]
-     */
-    public function messages(): iterable
-    {
-        return [];
-    }
-
-    /**
-     * Get the tools available to the agent.
-     *
-     * @return Tool[]
-     */
-    public function tools(): iterable
-    {
-        return [];
-    }
+    public function messages(): iterable { return []; }
+    public function tools(): iterable { return []; }
 }

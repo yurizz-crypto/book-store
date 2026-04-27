@@ -2,6 +2,8 @@
 
 return [
 
+    'fallback_chain' => ['gemini', 'openai', 'ollama'],
+
     /*
     |--------------------------------------------------------------------------
     | Default AI Provider Names

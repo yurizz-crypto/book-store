@@ -67,8 +67,8 @@
                             <div class="mt-4">
                                 <label class="block text-[10px] font-black text-[#001BB7] uppercase tracking-widest mb-1">Export Format</label>
                                 <select name="format" class="w-full text-sm border-gray-300 rounded-xl focus:ring-[#0046FF] focus:border-[#0046FF] bg-gray-50">
-                                    <option value="xlsx">Excel (.xlsx)</option>
                                     <option value="csv">CSV (.csv)</option>
+                                    <option value="xlsx">Excel (.xlsx)</option>
                                 </select>
                             </div>
                         </div>

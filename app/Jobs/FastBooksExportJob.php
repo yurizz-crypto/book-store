@@ -43,6 +43,7 @@ class FastBooksExportJob implements ShouldQueue
             default => new CSVWriter(),
         };
 
+        // Use storage path to ensure cross-platform compatibility
         $tempPath = storage_path('app/temp/' . basename($this->filename));
         if (!file_exists(dirname($tempPath))) {
             mkdir(dirname($tempPath), 0755, true);
@@ -64,7 +65,7 @@ class FastBooksExportJob implements ShouldQueue
                 'categories.name as category_name', 'books.created_at'
             ]);
 
-        // Filters
+        // Apply Filters
         if (!empty($this->filters['category_id'])) {
             $query->where('books.category_id', $this->filters['category_id']);
         }
@@ -77,8 +78,11 @@ class FastBooksExportJob implements ShouldQueue
             }
         }
 
-        // Optimized Streaming
-        foreach ($query->orderBy('books.id')->cursor() as $book) {
+        /* | LAB 7 OPTIMIZATION: 
+        | We order by the partition key (created_at) instead of ID.
+        | This allows PostgreSQL to stream 1M rows without a global merge-sort.
+        */
+        foreach ($query->orderBy('books.created_at')->cursor() as $book) {
             $writer->addRow(Row::fromValues([
                 $book->id,
                 $book->isbn,
@@ -93,6 +97,7 @@ class FastBooksExportJob implements ShouldQueue
 
         $writer->close();
 
+        // Move to public storage
         Storage::disk('public')->put($this->filename, fopen($tempPath, 'r+'));
         
         if (file_exists($tempPath)) {

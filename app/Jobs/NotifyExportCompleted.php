@@ -30,22 +30,23 @@ class NotifyExportCompleted implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public User $user, 
-        public string $filename
-    ) {}
+            public User $user, 
+            public string $filename,
+            public string $title = 'Export Completed', // Added default
+            public string $message = 'Your file is ready for download.' // Added default
+        ) {}
 
     /**
      * Execute the job.
      */
     public function handle(): void
     {
-        // Generate a secure download link from your storage disk
-        $downloadUrl = Storage::disk('public')->url($this->filename);
+        // Use asset() to ensure the URL is absolute and bypasses 404 redirect issues
+        $downloadUrl = asset('storage/' . $this->filename);
 
-        // Dispatch the notification
-        $this->user->notify(new UserActionNotification('Export Completed', [
-            'event'   => 'Your Export File is Ready',
-            'details' => 'The background export process has finished successfully. Click to download your file.',
+        $this->user->notify(new UserActionNotification($this->title, [
+            'event'   => $this->title,
+            'details' => $this->message,
             'url'     => $downloadUrl
         ]));
     }

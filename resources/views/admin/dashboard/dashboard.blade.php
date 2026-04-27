@@ -75,6 +75,23 @@
                         </form>
                     </div>
 
+                    {{-- Book Import Progress Bar --}}
+                    <div id="progressContainer" class="hidden mt-6 p-4 bg-[#F5F1DC]/20 rounded-2xl border border-[#001BB7]/5">
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div id="progressBar" class="bg-[#FF8040] h-full w-0 transition-all duration-300"></div>
+                        </div>
+                        <div class="flex justify-between mt-3">
+                            <div class="flex flex-col">
+                                <span id="progressText" class="text-[10px] font-black text-[#001BB7] uppercase tracking-widest">0% Uploaded</span>
+                                <span id="progressSize" class="text-[8px] font-bold text-gray-400 mt-0.5">0.00 MB / 0.00 MB</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="animate-pulse w-1.5 h-1.5 bg-[#FF8040] rounded-full"></div>
+                                <span class="text-[9px] font-black text-[#FF8040] uppercase tracking-widest">In Progress</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <hr class="border-gray-100">
 
                     {{-- Book Export & System Backup --}}
@@ -242,39 +259,62 @@
             </div>
         </div>
 
+        
         <div class="bg-white p-10 rounded-[3rem] border border-[#0046FF]/5 shadow-2xl">
             <h2 class="text-xl font-black text-[#001BB7] uppercase tracking-tighter mb-8">Recent Feedback</h2>
             
             @if($recentReviews->count() > 0)
                 <div class="space-y-4">
                     @foreach($recentReviews as $review)
-                    <a href="{{ route('books.show', $review->book) }}" class="block group">
-                        <div class="p-6 bg-[#F5F1DC]/30 rounded-2xl border border-transparent group-hover:border-[#0046FF]/10 group-hover:scale-[1.02] transition-all duration-300 flex items-start gap-4">
-                            <div class="w-10 h-10 bg-[#001BB7] rounded-xl flex items-center justify-center text-[#F5F1DC] font-black text-xs shrink-0 shadow-sm">
-                                {{ substr($review->user->first_name, 0, 1) }}
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between mb-1">
-                                    <p class="text-[10px] font-black uppercase text-[#001BB7] group-hover:text-[#FF8040] transition-colors">
-                                        {{ $review->user->first_name }} on {{ $review->book->title }}
-                                    </p>
-                                    @if($review->ai_analysis)
-                                        <span class="text-[8px] font-black bg-[#FF8040] text-white px-2 py-0.5 rounded-md uppercase tracking-widest">
-                                            AI Insight
-                                        </span>
-                                    @endif
+                        {{-- SAFETY CHECK: Only wrap in a link if the book exists to prevent UrlGenerationException --}}
+                        @if($review->book)
+                            <a href="{{ route('books.show', $review->book_id) }}" class="block group">
+                        @else
+                            <div class="block opacity-75">
+                        @endif
+
+                            <div class="p-6 bg-[#F5F1DC]/30 rounded-2xl border border-transparent {{ $review->book ? 'group-hover:border-[#0046FF]/10 group-hover:scale-[1.02]' : '' }} transition-all duration-300 flex items-start gap-4">
+                                <div class="w-10 h-10 bg-[#001BB7] rounded-xl flex items-center justify-center text-[#F5F1DC] font-black text-xs shrink-0 shadow-sm">
+                                    {{-- Access user safely (Eager loaded in DashboardService) --}}
+                                    {{ substr($review->user->first_name ?? 'U', 0, 1) }}
                                 </div>
                                 
-                                <p class="text-sm italic text-[#001BB7]/70 font-bold line-clamp-1 mb-2">"{{ $review->comment }}"</p>
-                                
-                                @if($review->ai_analysis)
-                                    <div class="p-3 bg-white/60 rounded-xl border border-[#001BB7]/5 text-[11px] font-bold text-[#001BB7]/80 leading-relaxed">
-                                        <span class="text-[#FF8040] font-black">Summary:</span> {{ $review->ai_analysis }}
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <p class="text-[10px] font-black uppercase text-[#001BB7] {{ $review->book ? 'group-hover:text-[#FF8040]' : '' }} transition-colors">
+                                            {{ $review->user->first_name ?? 'User' }} on 
+                                            {{-- FALLBACK: Handle missing book titles --}}
+                                            @if($review->book)
+                                                {{ $review->book->title }}
+                                            @else
+                                                <span class="text-red-500 italic">Archived Content</span>
+                                            @endif
+                                        </p>
+                                        
+                                        {{-- Lab 8: AI Insight Badge --}}
+                                        @if($review->ai_analysis)
+                                            <span class="text-[8px] font-black bg-[#FF8040] text-white px-2 py-0.5 rounded-md uppercase tracking-widest">
+                                                AI Insight
+                                            </span>
+                                        @endif
                                     </div>
-                                @endif
+                                    
+                                    <p class="text-sm italic text-[#001BB7]/70 font-bold line-clamp-1 mb-2">"{{ $review->comment }}"</p>
+                                    
+                                    {{-- Lab 8: AI Analysis Section (Optimized background processing) --}}
+                                    @if($review->ai_analysis)
+                                        <div class="p-3 bg-white/60 rounded-xl border border-[#001BB7]/5 text-[11px] font-bold text-[#001BB7]/80 leading-relaxed">
+                                            <span class="text-[#FF8040] font-black">Summary:</span> {{ $review->ai_analysis }}
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
-                    </a>
+
+                        @if($review->book)
+                            </a>
+                        @else
+                            </div>
+                        @endif
                     @endforeach
                 </div>
             @else
@@ -358,48 +398,82 @@
     document.addEventListener('DOMContentLoaded', function () {
         const importForm = document.getElementById('importForm');
         const submitButton = importForm.querySelector('button[type="submit"]');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressSize = document.getElementById('progressSize');
 
         importForm.addEventListener('submit', function (e) {
-            // 1. Stop the standard page-reloading form submission
             e.preventDefault();
 
-            // 2. Change the button state so the user knows it's uploading
-            const originalText = submitButton.innerHTML;
-            submitButton.innerHTML = 'Uploading...';
+            // 1. Prepare UI
+            submitButton.innerHTML = 'Sending...';
             submitButton.disabled = true;
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('bg-emerald-500');
+            progressBar.classList.add('bg-[#FF8040]');
 
-            // 3. Gather the file data
+            // 2. Setup XMLHttpRequest
             const formData = new FormData(importForm);
+            const xhr = new XMLHttpRequest();
 
-            // 4. Send the file in the background using Fetch API
-            fetch(importForm.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest', // Tells Laravel this is an AJAX request
-                    'Accept': 'application/json'
+            xhr.open('POST', importForm.action, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('Accept', 'application/json');
+
+            // 3. Monitor Upload Progress
+            xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) {
+                    const percent = (e.loaded / e.total) * 100;
+                    progressBar.style.width = percent + '%';
+                    progressText.innerText = Math.round(percent) + '% Uploaded';
+                    
+                    const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
+                    const totalMB = (e.total / (1024 * 1024)).toFixed(2);
+                    progressSize.innerText = `${loadedMB} MB / ${totalMB} MB`;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Upload is done! The background job has started.
-                    submitButton.innerHTML = 'Upload Complete!';
-                    alert(data.message); // Replace this with a nice UI Toast notification if you have one
-                    importForm.reset();
+            };
+
+            // 4. Handle Response
+            xhr.onload = function () {
+                let response = {};
+                try {
+                    response = JSON.parse(xhr.responseText);
+                } catch (err) {
+                    console.error("Parse Error:", err);
+                }
+
+                if (xhr.status === 200 && response.status === 'success') {
+                    // Success State
+                    progressText.innerText = 'Upload Complete!';
+                    progressBar.classList.replace('bg-[#FF8040]', 'bg-emerald-500');
+                    submitButton.innerHTML = 'Uploaded';
+                    
+                    alert(response.message);
+                    
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = 'Upload';
+                        importForm.reset();
+                    }, 3000);
                 } else {
-                    // Handle validation errors
-                    submitButton.innerHTML = originalText;
+                    // Error State
+                    alert('Upload failed. Please check the file and try again.');
+                    progressContainer.classList.add('hidden');
                     submitButton.disabled = false;
-                    alert('Upload failed. Please check the file size and type.');
+                    submitButton.innerHTML = 'Retry Upload';
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                submitButton.innerHTML = originalText;
+            };
+
+            xhr.onerror = function () {
+                alert('A network error occurred.');
                 submitButton.disabled = false;
-                alert('A network error occurred during upload.');
-            });
+                submitButton.innerHTML = 'Retry Upload';
+            };
+
+            xhr.send(formData);
         });
     });
 </script>

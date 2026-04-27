@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Backup\Events\BackupHasFailed;   
 use Spatie\Backup\Events\BackupWasSuccessful;
+use App\Observers\BookObserver;
+use App\Models\Book;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // 1. Observers
+        Book::observe(BookObserver::class);
         Order::observe(OrderObserver::class);
 
         // 2. Audit Logging Events

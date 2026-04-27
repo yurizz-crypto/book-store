@@ -22,26 +22,29 @@ class FastBooksImportJob implements ShouldQueue
     {
         $this->filePath = $filePath;
     }
-
+    
     public function handle()
     {
         $path = Storage::disk('local')->path($this->filePath);
         
         if (!file_exists($path)) {
-            Log::error("Import failed: File not found at {$path}");
+            \Illuminate\Support\Facades\Log::error("Import failed: File not found at {$path}");
             return;
         }
 
         $handle = fopen($path, 'r');
-        
-        // 1. DYNAMIC HEADER DETECTION
-        // This maps 'ISBN' in the CSV to the 'isbn' column, regardless of its position
         $headers = fgetcsv($handle);
+        
+        if (!$headers) {
+            fclose($handle);
+            return;
+        }
+
         $headers = array_map('strtolower', $headers);
         $map = array_flip($headers);
 
-        // Pre-load categories
-        $categories = DB::table('categories')->pluck('id', 'name')->toArray();
+        // Pre-load categories (Small table, safe for memory)
+        $categories = \Illuminate\Support\Facades\DB::table('categories')->pluck('id', 'name')->toArray();
         $defaultCategoryId = array_values($categories)[0] ?? 1;
 
         $batch = [];
@@ -49,10 +52,11 @@ class FastBooksImportJob implements ShouldQueue
 
         try {
             while (($row = fgetcsv($handle)) !== false) {
-                // 2. SAFE MAPPING
-                // We use the detected map or fall back to null/0 to prevent crashes
+                $isbn = (string) ($row[$map['isbn'] ?? $map['book isbn'] ?? 0] ?? '');
+                if (empty($isbn)) continue;
+
                 $batch[] = [
-                    'isbn'           => (string) ($row[$map['isbn'] ?? $map['book isbn'] ?? 0] ?? ''),
+                    'isbn'           => $isbn,
                     'title'          => $row[$map['title'] ?? $map['book title'] ?? 1] ?? 'Untitled',
                     'author'         => $row[$map['author'] ?? 2] ?? 'Unknown',
                     'price'          => (float) ($row[$map['price (php)'] ?? $map['price'] ?? 5] ?? 0),
@@ -63,38 +67,57 @@ class FastBooksImportJob implements ShouldQueue
                     'updated_at'     => now(),
                 ];
 
+                // Process in chunks of 1000
                 if (count($batch) >= 1000) {
-                    $this->upsertBatch($batch);
+                    $this->processChunk($batch);
                     $rowCount += count($batch);
                     $batch = [];
                 }
             }
 
             if (!empty($batch)) {
-                $this->upsertBatch($batch);
+                $this->processChunk($batch);
                 $rowCount += count($batch);
             }
 
         } catch (\Exception $e) {
-            Log::error("Import error at row {$rowCount}: " . $e->getMessage());
-            throw $e; // Re-throw to mark job as failed in Laravel logs
+            \Illuminate\Support\Facades\Log::error("Import error: " . $e->getMessage());
+            throw $e; 
         } finally {
             fclose($handle);
-            Storage::disk('local')->delete($this->filePath);
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($this->filePath);
         }
         
-        Cache::forget('featured_homepage_books');
-        Cache::forget('homepage_categories');
+        \Illuminate\Support\Facades\Cache::forget('featured_homepage_books');
+        \Illuminate\Support\Facades\Cache::forget('homepage_categories');
         
-        Log::info("Successfully imported {$rowCount} books.");
+        \Illuminate\Support\Facades\Log::info("Successfully processed {$rowCount} rows.");
     }
 
-    private function upsertBatch(array $batch)
+    /**
+     * Optimized batch processor for high-scale tables
+     */
+    private function processChunk(array $batch)
     {
-        DB::table('books')->upsert(
-            $batch, 
-            ['isbn'], // Unique constraint
-            ['title', 'author', 'price', 'stock_quantity', 'category_id', 'description', 'updated_at'] // Columns to update
-        );
+        // 1. Get all ISBNs in the current 1,000-row batch
+        $batchIsbns = array_column($batch, 'isbn');
+
+        // 2. Query only the ISBNs in this batch to see which already exist
+        $existing = \Illuminate\Support\Facades\DB::table('books')
+            ->whereIn('isbn', $batchIsbns)
+            ->pluck('isbn')
+            ->toArray();
+            
+        $existingMap = array_flip($existing);
+
+        // 3. Filter the batch to only include books that are truly new
+        $newRecords = array_filter($batch, function($item) use ($existingMap) {
+            return !isset($existingMap[$item['isbn']]);
+        });
+
+        // 4. Insert only the new records
+        if (!empty($newRecords)) {
+            \Illuminate\Support\Facades\DB::table('books')->insert($newRecords);
+        }
     }
 }

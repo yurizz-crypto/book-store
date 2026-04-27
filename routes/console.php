@@ -38,3 +38,7 @@ Schedule::command('notification:prune')->weekly();
 
 // Monthly Compliance Archiving
 Schedule::command('audit:archive')->monthly();
+
+Schedule::command('app:refresh-bestseller-stats')
+    ->hourly()
+    ->withoutOverlapping();

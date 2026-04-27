@@ -22,4 +22,6 @@ class AiController extends Controller
             return back()->withErrors(['ai_error' => 'The Matchmaker is a bit busy right now. Please try again in a moment!'])->withInput();
         }
     }
+
+    
 }

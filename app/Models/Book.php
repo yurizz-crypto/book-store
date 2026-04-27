@@ -33,6 +33,7 @@ class Book extends Model implements Auditable
         'stock_quantity',
         'description',
         'cover_image',
+        'ai_summary',
     ];
 
     public function category()

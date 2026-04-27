@@ -27,9 +27,19 @@ class DashboardService
             'totalOrders'  => $user->orders()->where('status', '!=', 'cart')->count(),
             'totalSpent'   => $user->orders()->where('status', 'completed')->sum('total_amount'),
             'recentOrders' => $user->orders()->where('status', '!=', 'cart')->latest()->take(5)->get(),
-            'recentBooks'  => Book::whereHas('orderItems.order', function($q) use ($user) {
-                                  $q->where('user_id', $user->id)->where('status', 'completed');
-                              })->latest()->take(4)->get(),
+            
+            // Lab 7 Optimization: Select only necessary columns
+            'recentBooks'  => Book::select(['id', 'title', 'cover_image'])
+                ->whereHas('orderItems.order', function($q) use ($user) {
+                    $q->where('user_id', $user->id)->where('status', 'completed');
+                })->latest()->take(4)->get(),
+            
+            // Lab 7 Optimization: Eager Load with column limits
+            'recentReviews' => $user->reviews()
+                ->with('book:id,title') 
+                ->latest()
+                ->take(3)
+                ->get(),
         ];
     }
 
@@ -39,7 +49,6 @@ class DashboardService
     public function getAdminMetrics(): array
     {
         return [
-            // Cached Aggregations
             'stats'         => Cache::remember('admin_stats', self::CACHE_TTL, fn() => $this->getGeneralStats()),
             'velocity'      => Cache::remember('admin_velocity', self::CACHE_TTL, fn() => $this->getSalesVelocity()),
             'userGrowth'    => Cache::remember('admin_user_growth', self::CACHE_TTL, fn() => $this->getUserGrowth()),
@@ -47,9 +56,10 @@ class DashboardService
             'topCategories' => Cache::remember('admin_top_categories', self::CACHE_TTL, fn() => $this->getTopCategories()),
             'statusSummary' => Cache::remember('admin_status_summary', self::CACHE_TTL, fn() => $this->getStatusSummary()),
             
-            // Live Data (Not cached because admins need real-time operational awareness here)
             'lowStock'      => $this->getLowStockBooks(),
-            'recentOrders'  => Order::with('user')->latest()->take(6)->get(),
+            
+            // Lab 7: Optimized Eager Loading for Admin
+            'recentOrders'  => Order::with('user:id,first_name,last_name,email')->latest()->take(6)->get(),
             'recentReviews' => $this->getAnalyzedReviews(),
         ];
     }
@@ -57,19 +67,19 @@ class DashboardService
     private function getAnalyzedReviews()
     {
         return Cache::remember('admin_ai_reviews', self::CACHE_TTL, function () {
-            $reviews = Review::with(['user', 'book'])->latest()->take(4)->get();
-            $agent = new ReviewAnalystAgent();
+            // Lab 7: Eager load relationships with column limits
+            $reviews = Review::with(['user:id,first_name', 'book:id,title'])->latest()->take(4)->get();
+            $aiManager = app(AiServiceManager::class);
 
-            return $reviews->map(function ($review) use ($agent) {
+            return $reviews->map(function ($review) use ($aiManager) {
                 try {
-                    // Attempt the AI analysis
-                    $review->ai_analysis = $agent->prompt($review->comment)->text;
+                    // Uses the fallback chain (OpenAI -> Gemini -> Ollama)
+                    $review->ai_analysis = $aiManager->generateWithFallback(
+                        "Summarize this customer review in 10 words: " . $review->comment,
+                        'admin_dashboard_summary'
+                    );
                 } catch (\Exception $e) {
-                    // Fallback if Gemini is overloaded or the key is busy
-                    $review->ai_analysis = "Summary temporarily unavailable.";
-                    
-                    // Log the error so you can see if it's a rate limit or a connection issue
-                    \Log::warning("Gemini API Error: " . $e->getMessage());
+                    $review->ai_analysis = "Analysis unavailable.";
                 }
                 return $review;
             });
@@ -147,7 +157,8 @@ class DashboardService
 
     private function getLowStockBooks() 
     {
-        return Book::where('stock_quantity', '<', 10)
+        return Book::select(['id', 'title', 'stock_quantity', 'price'])
+            ->where('stock_quantity', '<', 10)
             ->orderBy('stock_quantity', 'asc')
             ->paginate(5, ['*'], 'stock_page');
     }

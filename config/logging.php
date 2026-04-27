@@ -127,6 +127,12 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'ai_audit' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/ai_audit.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+        ],
+
     ],
 
 ];

@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('AI_DRIVER', 'gemini'),
+    'default' => env('AI_DRIVER', 'mock'),
 
     'connections' => [
 

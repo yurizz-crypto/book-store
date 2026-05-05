@@ -9,7 +9,9 @@
     "skills": [
         "ai-sdk-development",
         "laravel-best-practices",
+        "scout-development",
         "pest-testing",
+        "echo-development",
         "tailwindcss-development"
     ]
 }

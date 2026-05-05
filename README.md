@@ -41,11 +41,3 @@ Start the development server:
 
 🔐 Test Account Credentials
 The following accounts are pre-seeded in the database for testing login and role-based access:
-
-Customer:
-Email-> darkenborder7@gmail.com
-Password-> password123
-
-Customer:
-Email-> yuridonatosalise@gmail.com
-Password-> password123

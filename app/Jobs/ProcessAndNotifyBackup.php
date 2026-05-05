@@ -9,7 +9,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
 
 class ProcessAndNotifyBackup implements ShouldQueue
 {
@@ -24,7 +23,6 @@ class ProcessAndNotifyBackup implements ShouldQueue
 
     public function handle()
     {
-        // 1. Run the backup synchronously in the background worker
         Artisan::call('backup:run', ['--only-db' => true]);
 
         $backupName = config('backup.backup.name');
@@ -39,20 +37,23 @@ class ProcessAndNotifyBackup implements ShouldQueue
 
             $latestBackup = $files[0];
             
-            // 2. Prepare the public download path
             $publicFilename = 'exports/backup_' . now()->timestamp . '.zip';
-            
-            // 3. Move the file from private to public storage
             Storage::disk('public')->put($publicFilename, $disk->get($latestBackup));
+            
+            $downloadUrl = asset('storage/' . $publicFilename);
 
-            /* | FIX: Pass specific backup labels to the notification job.
-            | This prevents the notification from saying "Export Completed".
-            */
+            // 1. FIRE THE WEBSOCKET EVENT IMMEDIATELY
+            // Do not dispatch a job, broadcast the event right now so the 
+            // user's browser instantly starts the download.
+            event(new \App\Events\ExportReady($this->user->id, $downloadUrl));
+
+            // 2. DISPATCH THE INFORMATIONAL NOTIFICATION JOB
+            // This can happen safely in the background while the user is already downloading
             dispatch(new \App\Jobs\NotifyExportCompleted(
                 $this->user, 
                 $publicFilename,
-                'System Backup Ready', // Title
-                'The database backup has been generated successfully and is ready for download.' // Message
+                'System Backup Ready',
+                'The database backup has been generated successfully. It should have downloaded automatically.'
             ));
         }
     }

@@ -22,13 +22,14 @@ class UserActionNotification extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['database', 'mail'];
+        // Automatically check if we specified channels, otherwise default to both
+        return $this->data['via'] ?? ['database', 'mail'];
     }
 
     public function toMail($notifiable)
     {
         $url = $this->data['url'] ?? url('/admin/dashboard');
-        $actionText = $this->data['action_text'] ?? 'Download / View'; // Dynamic text
+        $actionText = $this->data['action_text'] ?? 'Download / View';
 
         $mail = (new MailMessage)
                     ->subject('System Notification: Action Completed')
@@ -39,7 +40,6 @@ class UserActionNotification extends Notification implements ShouldQueue
             $mail->line($this->data['details']);
         }
 
-        // Only show button if URL exists
         if (!empty($this->data['url'])) {
             $mail->action($actionText, $url);
         }
@@ -51,10 +51,14 @@ class UserActionNotification extends Notification implements ShouldQueue
     {
         return [
             'message'     => $this->message,
-            'event'       => $this->data['event'] ?? null,
-            'details'     => $this->data['details'] ?? null,
-            'url'         => $this->data['url'] ?? null,
-            'action_text' => $this->data['action_text'] ?? 'Download / View',
+            
+            // Use array_key_exists to safely check for keys to prevent strict PHP warnings
+            'event'       => array_key_exists('event', $this->data) ? $this->data['event'] : null,
+            'details'     => array_key_exists('details', $this->data) ? $this->data['details'] : null,
+            'url'         => array_key_exists('url', $this->data) ? $this->data['url'] : null,
+            
+            // Fallback to null instead of 'Download/View' so the UI hides the button
+            'action_text' => array_key_exists('action_text', $this->data) ? $this->data['action_text'] : null,
         ];
     }
 }

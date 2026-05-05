@@ -18,9 +18,6 @@ class FastAuditsExportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Increased timeout for 1M+ record processing (Lab 7)
-     */
     public $timeout = 900;
     
     protected $filters;
@@ -40,14 +37,11 @@ class FastAuditsExportJob implements ShouldQueue
     {
         Log::info("Starting Audit export ({$this->format}): {$this->filename}");
 
-        // 1. Initialize the correct high-speed writer
-        /** @var \OpenSpout\Writer\WriterInterface $writer */
         $writer = match($this->format) {
             'xlsx' => new XLSXWriter(),
             default => new CSVWriter(),
         };
 
-        // Ensure temp directory exists
         $tempPath = storage_path('app/temp/' . basename($this->filename));
         if (!file_exists(dirname($tempPath))) {
             mkdir(dirname($tempPath), 0755, true);
@@ -55,14 +49,12 @@ class FastAuditsExportJob implements ShouldQueue
 
         $writer->openToFile($tempPath);
 
-        // 2. Add Optimized Headings
         $writer->addRow(Row::fromValues([
             'Audit ID', 'User ID', 'User Email', 'Event', 
             'Model Type', 'Model ID', 'Changes (Old | New)', 
             'IP Address', 'Device', 'Date'
         ]));
 
-        // 3. Build the Base Query
         $query = DB::table('audits')
             ->leftJoin('users', 'audits.user_id', '=', 'users.id')
             ->select([
@@ -72,7 +64,6 @@ class FastAuditsExportJob implements ShouldQueue
                 'audits.created_at'
             ]);
 
-        // Apply Reusable Filtering Logic
         if (!empty($this->filters['user'])) {
             $query->where(function($q) {
                 $q->where('users.first_name', 'like', "%{$this->filters['user']}%")
@@ -82,15 +73,8 @@ class FastAuditsExportJob implements ShouldQueue
         if (!empty($this->filters['event'])) $query->where('event', $this->filters['event']);
         if (!empty($this->filters['model'])) $query->where('auditable_type', 'like', "%{$this->filters['model']}%");
 
-        /* | PERFORMANCE WIN (Lab 7):
-        | We use cursor() to stream results from the database. 
-        | This ensures we never load more than one row at a time into PHP memory.
-        */
         foreach ($query->orderBy('audits.id', 'desc')->cursor() as $audit) {
-            // Format the model name for readability
             $modelName = basename(str_replace('\\', '/', $audit->auditable_type));
-            
-            // Consolidate values to keep the spreadsheet readable
             $changes = "OLD: " . ($audit->old_values ?? '{}') . " | NEW: " . ($audit->new_values ?? '{}');
 
             $writer->addRow(Row::fromValues([
@@ -109,15 +93,24 @@ class FastAuditsExportJob implements ShouldQueue
 
         $writer->close();
 
-        // 4. Move to Public Storage and Cleanup
+        // Save file
         Storage::disk('public')->put($this->filename, fopen($tempPath, 'r+'));
         
         if (file_exists($tempPath)) {
             unlink($tempPath);
         }
 
-        // 5. Trigger the User Notification (Lab 8)
-        dispatch(new \App\Jobs\NotifyExportCompleted($this->user, $this->filename));
+        // 1. Fire WebSockets Event Instantly
+        $downloadUrl = asset('storage/' . $this->filename);
+        event(new \App\Events\ExportReady($this->user->id, $downloadUrl));
+
+        // 2. Dispatch the Background Notification
+        dispatch(new \App\Jobs\NotifyExportCompleted(
+            $this->user, 
+            $this->filename,
+            'Audit Log Export Ready',
+            'Your system audit export has finished processing.'
+        ));
         
         Log::info("Audit export completed: {$this->filename}");
     }

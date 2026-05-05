@@ -9,22 +9,26 @@ use Spatie\Backup\Events\BackupWasSuccessful;
 
 class NotifyAdminsOfBackupStatus
 {
-    /**
-     * Handle the event.
-     */
     public function handle(object $event): void
     {
         $isSuccess = $event instanceof BackupWasSuccessful;
         $title = $isSuccess ? 'System Backup Successful' : 'System Backup FAILED';
+        $details = $isSuccess 
+            ? 'Disaster recovery archive has been generated and stored locally.' 
+            : 'The automated system backup failed to complete.';
 
         $admins = User::where('role', 'admin')->get();
 
-        // PERFORMANCE FIX: Use Notification::send() instead of a manual foreach loop.
-        // This is vastly more efficient and integrates perfectly with Laravel's queue system.
         Notification::send($admins, new UserActionNotification('System Backup', [
-            'event'   => $title,
-            'details' => 'Disaster recovery archive has been generated and stored locally.',
-            'url'     => '/admin/dashboard' 
+            'event'       => $title,
+            'details'     => $details,
+            
+            // Explicitly set these to null to prevent missing key errors
+            // and tell the frontend NOT to render a button
+            'url'         => null, 
+            'action_text' => null,
+            
+            'via'         => ['database'] 
         ]));
     }
 }

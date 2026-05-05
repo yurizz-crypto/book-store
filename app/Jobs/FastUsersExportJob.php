@@ -54,9 +54,21 @@ class FastUsersExportJob implements ShouldQueue
         }
 
         fclose($handle);
+        
+        // Save file
         Storage::disk('public')->put($this->filename, fopen($tempPath, 'r+'));
         unlink($tempPath);
 
-        dispatch(new \App\Jobs\NotifyExportCompleted($this->user, $this->filename));
+        // 1. Fire WebSockets Event Instantly
+        $downloadUrl = asset('storage/' . $this->filename);
+        event(new \App\Events\ExportReady($this->user->id, $downloadUrl));
+
+        // 2. Dispatch Background Notification
+        dispatch(new \App\Jobs\NotifyExportCompleted(
+            $this->user, 
+            $this->filename,
+            'Users Export Ready',
+            'Your users data export has been generated.'
+        ));
     }
 }

@@ -29,7 +29,6 @@ class FastFinancialExportJob implements ShouldQueue
 
     public function handle()
     {
-        // Get aggregate data directly from DB in one row
         $stats = DB::table('orders')
             ->where('status', 'completed')
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
@@ -53,9 +52,21 @@ class FastFinancialExportJob implements ShouldQueue
         ]);
 
         fclose($handle);
+        
+        // Save File
         Storage::disk('public')->put($this->filename, fopen($tempPath, 'r+'));
         unlink($tempPath);
 
-        dispatch(new \App\Jobs\NotifyExportCompleted($this->user, $this->filename));
+        // 1. Fire WebSockets Event Instantly
+        $downloadUrl = asset('storage/' . $this->filename);
+        event(new \App\Events\ExportReady($this->user->id, $downloadUrl));
+
+        // 2. Dispatch Background Notification
+        dispatch(new \App\Jobs\NotifyExportCompleted(
+            $this->user, 
+            $this->filename,
+            'Financial Export Ready',
+            'Your requested financial report has been generated.'
+        ));
     }
 }

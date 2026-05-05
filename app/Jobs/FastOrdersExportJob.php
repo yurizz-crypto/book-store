@@ -31,7 +31,6 @@ class FastOrdersExportJob implements ShouldQueue
         $tempPath = tempnam(sys_get_temp_dir(), 'orders_');
         $handle = fopen($tempPath, 'w');
 
-        // CSV BOM & Headings
         fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
         fputcsv($handle, ['Order ID', 'Customer Name', 'Customer Email', 'Total Amount', 'Status', 'Order Date']);
 
@@ -46,7 +45,6 @@ class FastOrdersExportJob implements ShouldQueue
                 'orders.created_at'
             ]);
 
-        // Filters
         if (!empty($this->filters['status'])) $query->where('orders.status', $this->filters['status']);
         if (!empty($this->filters['user_id'])) $query->where('orders.user_id', $this->filters['user_id']);
         if (!empty($this->filters['date_from'])) $query->whereDate('orders.created_at', '>=', $this->filters['date_from']);
@@ -64,9 +62,21 @@ class FastOrdersExportJob implements ShouldQueue
         }
 
         fclose($handle);
+        
+        // Save file
         Storage::disk('public')->put($this->filename, fopen($tempPath, 'r+'));
         unlink($tempPath);
 
-        dispatch(new \App\Jobs\NotifyExportCompleted($this->user, $this->filename));
+        // 1. Fire WebSockets Event Instantly
+        $downloadUrl = asset('storage/' . $this->filename);
+        event(new \App\Events\ExportReady($this->user->id, $downloadUrl));
+
+        // 2. Dispatch Background Notification
+        dispatch(new \App\Jobs\NotifyExportCompleted(
+            $this->user, 
+            $this->filename,
+            'Orders Export Ready',
+            'Your orders data export has been generated.'
+        ));
     }
 }

@@ -29,15 +29,16 @@ class NotifyExportCompleted implements ShouldQueue
     {
         $downloadUrl = asset('storage/' . $this->filename);
 
-        // 1. Dispatch the WebSocket event to trigger the auto-download instantly
-        event(new \App\Events\ExportReady($this->user->id, $downloadUrl));
+        // REMOVED: event(new \App\Events\ExportReady(...))
 
-        // 2. Send the informational notification as a fallback/record
+        // We now force this generic notification to only use the database channel
+        // to prevent mail timeouts, just like we did for the admin listener.
         $this->user->notify(new UserActionNotification($this->title, [
             'event'   => $this->title,
-            'details' => $this->message . ' (This file should have downloaded automatically. If it didn\'t, you can download it manually below.)',
+            'details' => $this->message . ' (If it didn\'t download automatically, you can download it manually below.)',
             'url'     => $downloadUrl,
-            'action_text' => 'Download Manually' // Change button text
+            'action_text' => 'Download Manually',
+            'via'     => ['database'] // Force database only to bypass mail issues
         ]));
     }
 

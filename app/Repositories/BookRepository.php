@@ -17,10 +17,10 @@ class BookRepository
                 'books.price', 'books.stock_quantity', 'books.published_at',
                 'books.category_id'
             ])
-            ->with(['category:id,name,slug'])
+            ->with(['category:id,name']) // <--- Removed 'slug' here
             ->where('is_active', true)
             ->orderBy('published_at', 'desc')
-            ->orderBy('id', 'desc') // Secondary sort for stable pagination
+            ->orderBy('id', 'desc')
             ->cursorPaginate($perPage);
     }
 }

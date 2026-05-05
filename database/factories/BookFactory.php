@@ -18,6 +18,7 @@ class BookFactory extends Factory
             'stock_quantity' => fake()->numberBetween(0, 100),
             'description' => fake()->paragraphs(3, true),
             'cover_image' => null,
+            'published_at' => $this->faker->dateTimeBetween('-25 years', '+1 year')->format('Y-m-d'),            
             ];
         }
 }

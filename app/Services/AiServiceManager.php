@@ -2,85 +2,59 @@
 
 namespace App\Services;
 
-use Exception;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class AiServiceManager
 {
     /**
-     * Executes an AI prompt using a fallback chain to guarantee reliability.
+     * Generate a response strictly using Google Gemini.
      */
-    public function generateWithFallback(string $prompt, string $featureName = 'general'): string
+    public function generate(string $prompt): string 
     {
-        // Load fallback chain from config (e.g., ['openai', 'gemini', 'ollama'])
-        $providers = config('ai.fallback_chain', ['openai', 'gemini', 'ollama']);
-
-        foreach ($providers as $provider) {
-            try {
-                // Attempt to call the provider
-                $response = $this->callProvider($provider, $prompt);
-
-                // If successful, log the cost and usage for auditing
-                $this->logUsage($provider, $featureName, $response['tokens_used']);
-
-                // Log decision for compliance audit
-                Log::channel('ai_audit')->info('AI Decision Executed', [
-                    'feature' => $featureName,
-                    'provider_used' => $provider,
-                    'input_hash' => md5($prompt),
-                    'timestamp' => now(),
-                ]);
-
-                return $response['text'];
-
-            } catch (Exception $e) {
-                // If the provider fails (rate limit, network error), log a warning and try the next one
-                Log::warning("AI Provider [{$provider}] failed: " . $e->getMessage());
-                continue; 
-            }
+        $apiKey = env('GEMINI_API_KEY');
+        
+        if (empty($apiKey)) {
+            Log::error('Gemini API key is missing from .env');
+            return "Error: AI Service is not configured properly. Missing API Key.";
         }
 
-        // If all cloud AND local providers fail, throw a graceful exception
-        throw new RuntimeException('All AI providers are currently unavailable. Please try again later.');
+        try {
+            // Make the POST request to the Gemini 1.5 Flash API
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ]
+            ]);
+
+            // Check if the request was successful
+            if ($response->successful()) {
+                return $response->json('candidates.0.content.parts.0.text');
+            }
+
+            // Log the error if the API rejected the request
+            Log::error('Gemini API Error: ' . $response->body());
+            return "Sorry, the AI is currently unavailable. Please try again later.";
+
+        } catch (\Exception $e) {
+            // Log any connection timeouts or fatal errors
+            Log::error("AI Connection failed: " . $e->getMessage());
+            return "Sorry, there was a problem connecting to the AI service.";
+        }
     }
 
     /**
-     * Simulates the provider call. 
-     * In a real app, this wraps the Laravel AI SDK or HTTP client.
+     * Alias for legacy calls that expected a fallback chain.
+     * Routes directly to Gemini.
      */
-    private function callProvider(string $provider, string $prompt): array
+    public function generateWithFallback(string $prompt): string
     {
-        // Logic to route the prompt to the correct SDK/Agent based on $provider
-        // Returns the generated text and token count
-        return [
-            'text' => "Generated response from {$provider}",
-            'tokens_used' => rand(50, 200), // Extracted from actual API response headers
-        ];
-    }
-
-    /**
-     * Records the token usage to the database for cost tracking.
-     */
-    private function logUsage(string $provider, string $feature, int $tokens): void
-    {
-        // Simple cost calculation logic (e.g., $0.0002 per 1k tokens)
-        $ratePerThousand = match($provider) {
-            'openai' => 0.0002,
-            'gemini' => 0.0001,
-            'ollama' => 0.0000, // Local is free!
-            default => 0.0000,
-        };
-
-        DB::table('ai_usage_logs')->insert([
-            'provider' => $provider,
-            'feature' => $feature,
-            'tokens_used' => $tokens,
-            'cost_estimate' => ($tokens / 1000) * $ratePerThousand,
-            'user_id' => auth()->id(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        return $this->generate($prompt);
     }
 }

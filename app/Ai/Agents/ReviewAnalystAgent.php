@@ -2,26 +2,28 @@
 
 namespace App\Ai\Agents;
 
-use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Contracts\Conversational;
-use Laravel\Ai\Contracts\HasTools;
-use Laravel\Ai\Contracts\Tool;
-use Laravel\Ai\Messages\Message;
-use Laravel\Ai\Promptable;
+use App\Services\AiServiceManager;
+use App\Models\Book;
 
-class ReviewAnalystAgent implements Agent, Conversational, HasTools
+class ReviewAnalystAgent
 {
-    use Promptable;
+    public function __construct(protected AiServiceManager $aiManager) {}
 
-    protected string $driver = 'gemini';
-
-    public function instructions(): string
+    public function summarizeReviews(Book $book): string
     {
-        return "You are the PageTurner AI Lead Analyst. Your goal is to synthesize multiple customer reviews into a single, cohesive 'Executive Summary'. " .
-            "Avoid generic phrases like 'The reviews are positive'. Instead, identify specific themes (e.g., 'Readers praise the world-building but found the pacing slow'). " .
-            "Always maintain a professional yet literary tone. Keep your response to one paragraph.";
-    }
+        $reviews = $book->reviews()->latest()->limit(15)->pluck('comment');
 
-    public function messages(): iterable { return []; }
-    public function tools(): iterable { return []; }
+        if ($reviews->isEmpty()) {
+            return "Not enough reviews to generate an analysis.";
+        }
+
+        $reviewsText = $reviews->map(fn($review, $index) => ($index + 1) . ". {$review}")->join("\n");
+
+        $prompt = "You are a data analyst for a bookstore. Analyze the following user reviews for the book '{$book->title}'.\n\n" .
+                  "Provide a short, 3-sentence summary of the overall sentiment, highlighting any recurring praises or complaints.\n\n" .
+                  "Reviews:\n{$reviewsText}";
+
+        // Call Gemini
+        return $this->aiManager->generate($prompt);
+    }
 }

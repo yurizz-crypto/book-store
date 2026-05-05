@@ -2,7 +2,7 @@
 
 return [
 
-    'fallback_chain' => ['gemini', 'openai', 'ollama'],
+    'fallback_chain' => ['gemini'],
 
     /*
     |--------------------------------------------------------------------------
@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('AI_DRIVER', 'mock'),
+    'default' => env('AI_DRIVER', 'gemini'),
 
     'connections' => [
 

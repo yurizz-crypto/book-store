@@ -20,18 +20,23 @@ class AiServiceManager
         }
 
         try {
-            // Make the POST request to the Gemini 1.5 Flash API
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-            ])->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
-                'contents' => [
-                    [
-                        'parts' => [
-                            ['text' => $prompt]
+            // Dynamically grab the model from .env, defaulting to 2.5-flash if missing
+            $model = env('GEMINI_MODEL', 'gemini-2.5-flash');
+            $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+
+            // Make the POST request to the Gemini API
+            $response = Http::withoutVerifying()
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->post($endpoint, [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt]
+                            ]
                         ]
                     ]
-                ]
-            ]);
+                ]);
 
             // Check if the request was successful
             if ($response->successful()) {

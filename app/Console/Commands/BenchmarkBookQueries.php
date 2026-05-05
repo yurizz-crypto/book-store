@@ -82,7 +82,11 @@ class BenchmarkBookQueries extends Command
     private function benchmarkScout(int $iterations): float
     {
         return $this->measure(function () {
-            Book::search('Harry Potter')->get();
+            // Using Raw SQL for the benchmark to ensure we hit the TSVector index
+            DB::table('books')
+                ->whereRaw("search_vector @@ plainto_tsquery('english', ?)", ['Harry Potter'])
+                ->limit(10)
+                ->get();
         }, $iterations);
     }
 

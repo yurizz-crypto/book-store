@@ -32,6 +32,8 @@ Route::get('/categories/{category}', [CategoryController::class, 'show'])->name(
 */
 // web.php (Authenticated Section)
 Route::middleware('auth')->group(function () {
+    Route::get('/books/{book}/ai-status', [ReviewController::class, 'checkAiStatus'])->name('books.ai-status');
+
     Route::post('/ai/matchmake', [AiController::class, 'matchmake'])->name('ai.matchmake');
 
     Route::post('/books/{book}/analyze-reviews', [ReviewController::class, 'analyzeBookReviews'])
@@ -94,7 +96,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
     Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
     Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
-    Route::get('/books/{book}/ai-status', [ReviewController::class, 'checkAiStatus'])->name('books.ai-status');
     
     Route::get('/orders', [OrderController::class, 'adminIndex'])->name('orders.index');
     Route::patch('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');

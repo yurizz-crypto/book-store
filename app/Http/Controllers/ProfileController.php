@@ -43,11 +43,20 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    public function updateAddress(UpdateAddressRequest $request): RedirectResponse
+    public function updateAddress(UpdateAddressRequest $request)
     {
+        $validated = $request->validated();
+
+        // Explicitly map the form field to the database column
         $request->user()->addresses()->updateOrCreate(
             ['is_default' => true],
-            $request->validated()
+            [
+                'street_address' => $validated['address_line_1'], // Map here
+                'city'           => $validated['city'],
+                'state'          => $validated['state'],
+                'postal_code'    => $validated['postal_code'],
+                'country'        => $validated['country'],
+            ]
         );
 
         return back()->with('status', 'address-updated');
